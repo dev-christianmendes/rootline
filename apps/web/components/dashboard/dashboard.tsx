@@ -34,10 +34,23 @@ import {
 
 import { useIncidents } from "@/features/incidents/use-incidents";
 import { useDeployments } from "@/features/deployments/use-deployments";
-import { useServices, useSystemHealth } from "@/features/services/use-services";
-import { formatPercent, formatTime, HEALTH_META } from "@/lib/format";
-import { HealthDot, SeverityBadge, StatusBadge } from "@/components/common/badges";
-import { LoadingBlock } from "@/components/common/states";
+import {
+  useServiceNames,
+  useServices,
+  useSystemHealth,
+} from "@/features/services/use-services";
+import {
+  formatPercent,
+  formatTime,
+  HEALTH_META,
+  SEVERITY_ORDER,
+} from "@/lib/format";
+import {
+  HealthDot,
+  SeverityBadge,
+  StatusBadge,
+} from "@/components/common/badges";
+import { ErrorState, LoadingBlock } from "@/components/common/states";
 
 const KIND_LABEL: Record<string, string> = {
   frontend: "Frontend",
@@ -55,16 +68,48 @@ export function Dashboard() {
   const services = useServices();
   const deployments = useDeployments();
 
-  const loading = health.isLoading || incidents.isLoading || services.isLoading;
+  const loading =
+    health.isLoading ||
+    incidents.isLoading ||
+    services.isLoading ||
+    deployments.isLoading;
+
+  const error =
+    health.isError ||
+    incidents.isError ||
+    services.isError ||
+    deployments.isError;
 
   const activeIncidents = (incidents.data ?? [])
     .filter((i) => i.status !== "RESOLVED")
-    .sort((a, b) => a.severity.localeCompare(b.severity));
+    .sort(
+      (a, b) =>
+        SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
+    );
 
   const serviceRows = (services.data ?? []).slice().sort((a, b) => {
-    const rank: Record<string, number> = { critical: 0, degraded: 1, healthy: 2, unknown: 3 };
+    const rank: Record<string, number> = {
+      critical: 0,
+      degraded: 1,
+      healthy: 2,
+      unknown: 3,
+    };
     return (rank[a.health] ?? 9) - (rank[b.health] ?? 9);
   });
+
+  if (error) {
+    return (
+      <ErrorState
+        title="Unable to load dashboard"
+        onRetry={() => {
+          health.refetch();
+          incidents.refetch();
+          services.refetch();
+          deployments.refetch();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -97,7 +142,6 @@ export function Dashboard() {
           <div className="grid gap-6 lg:grid-cols-5">
             <ActiveIncidentsPanel
               incidents={activeIncidents}
-              services={services.data ?? []}
               className="lg:col-span-2"
             />
             <ServiceHealthTable
@@ -106,7 +150,7 @@ export function Dashboard() {
             />
           </div>
 
-          <RecentDeployments deployments={deployments.data ?? []} services={services.data ?? []} />
+          <RecentDeployments deployments={deployments.data ?? []} />
         </>
       )}
     </div>
@@ -127,10 +171,30 @@ function HealthOverview({
   activeIncidents: number;
 }) {
   const stats = [
-    { label: "Availability", value: formatPercent(availability), icon: CheckCircle2, tone: "text-success" },
-    { label: "Avg latency", value: `${avgLatencyMs}ms`, icon: Gauge, tone: avgLatencyMs > 200 ? "text-warning" : "text-info" },
-    { label: "Error rate", value: formatPercent(errorRate, 2), icon: Percent, tone: errorRate > 1 ? "text-critical" : "text-info" },
-    { label: "Services", value: String(serviceCount), icon: Server, tone: "text-muted-foreground" },
+    {
+      label: "Availability",
+      value: formatPercent(availability),
+      icon: CheckCircle2,
+      tone: "text-success",
+    },
+    {
+      label: "Avg latency",
+      value: `${avgLatencyMs}ms`,
+      icon: Gauge,
+      tone: avgLatencyMs > 200 ? "text-warning" : "text-info",
+    },
+    {
+      label: "Error rate",
+      value: formatPercent(errorRate, 2),
+      icon: Percent,
+      tone: errorRate > 1 ? "text-critical" : "text-info",
+    },
+    {
+      label: "Services",
+      value: String(serviceCount),
+      icon: Server,
+      tone: "text-muted-foreground",
+    },
   ];
 
   return (
@@ -138,29 +202,53 @@ function HealthOverview({
       {stats.map((s) => (
         <Card key={s.label} className="gap-1 py-4 lg:col-span-1">
           <CardContent className="flex items-center gap-3 px-4">
-            <span className={cn("rounded-md border border-border/70 bg-card p-2", s.tone)}>
+            <span
+              className={cn(
+                "rounded-md border border-border/70 bg-card p-2",
+                s.tone,
+              )}
+            >
               <s.icon className="size-4" />
             </span>
             <div>
               <p className="text-muted-foreground text-xs">{s.label}</p>
-              <p className="font-mono text-2xl font-medium tracking-tight">{s.value}</p>
+              <p className="font-mono text-2xl font-medium tracking-tight">
+                {s.value}
+              </p>
             </div>
           </CardContent>
         </Card>
       ))}
 
-      <Card className={cn("gap-0 py-0 lg:col-span-1", activeIncidents > 0 && "border-critical/30")}>
+      <Card
+        className={cn(
+          "gap-0 py-0 lg:col-span-1",
+          activeIncidents > 0 && "border-critical/30",
+        )}
+      >
         <CardHeader className="flex flex-row items-center justify-between gap-2 py-4">
           <CardTitle className="text-xs font-medium text-muted-foreground">
             Active incidents
           </CardTitle>
         </CardHeader>
         <CardContent className="flex items-center gap-3 px-4 pb-4">
-          <span className={cn("flex size-9 items-center justify-center rounded-md border border-border/70", activeIncidents > 0 ? "bg-critical/10 text-critical" : "bg-success/10 text-success")}>
+          <span
+            className={cn(
+              "flex size-9 items-center justify-center rounded-md border border-border/70",
+              activeIncidents > 0
+                ? "bg-critical/10 text-critical"
+                : "bg-success/10 text-success",
+            )}
+          >
             <Zap className="size-4" />
           </span>
           <div>
-            <p className={cn("font-mono text-2xl font-medium", activeIncidents > 0 ? "text-critical" : "text-success")}>
+            <p
+              className={cn(
+                "font-mono text-2xl font-medium",
+                activeIncidents > 0 ? "text-critical" : "text-success",
+              )}
+            >
               {activeIncidents}
             </p>
             <p className="text-muted-foreground text-xs">
@@ -175,15 +263,12 @@ function HealthOverview({
 
 function ActiveIncidentsPanel({
   incidents,
-  services,
   className,
 }: {
   incidents: NonNullable<ReturnType<typeof useIncidents>["data"]>;
-  services: ReturnType<typeof useServices>["data"];
   className?: string;
 }) {
-  const name = (serviceId: string) =>
-    (services ?? []).find((s) => s.id === serviceId)?.name ?? serviceId;
+  const name = useServiceNames();
 
   return (
     <Card className={cn("gap-0", className)}>
@@ -218,7 +303,8 @@ function ActiveIncidentsPanel({
                   {incident.title}
                 </p>
                 <p className="text-muted-foreground truncate text-xs">
-                  {name(incident.serviceId)} · started {formatTime(incident.startedAt)}
+                  {name(incident.serviceId)} · started{" "}
+                  {formatTime(incident.startedAt)}
                 </p>
               </div>
               <StatusBadge status={incident.status} />
@@ -271,10 +357,16 @@ function ServiceHealthTable({
               return (
                 <TableRow
                   key={service.id}
-                  className={cn(critical && "bg-critical/[0.04]", degraded && "bg-warning/[0.03]")}
+                  className={cn(
+                    critical && "bg-critical/[0.04]",
+                    degraded && "bg-warning/[0.03]",
+                  )}
                 >
                   <TableCell>
-                    <Link href={`/services/${service.id}`} className="flex items-center gap-2.5">
+                    <Link
+                      href={`/services/${service.id}`}
+                      className="flex items-center gap-2.5"
+                    >
                       <HealthDot health={service.health} />
                       <span className="font-medium">{service.name}</span>
                       <span className="text-muted-foreground hidden font-mono text-[11px] sm:inline">
@@ -283,14 +375,33 @@ function ServiceHealthTable({
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={health.badge} className="font-mono text-[10px]">
+                    <Badge
+                      variant={health.badge}
+                      className="font-mono text-[10px]"
+                    >
                       {health.label}
                     </Badge>
                   </TableCell>
-                  <TableCell className={cn("text-right font-mono", degraded || critical ? "text-warning" : "text-muted-foreground")}>
+                  <TableCell
+                    className={cn(
+                      "text-right font-mono",
+                      degraded || critical
+                        ? "text-warning"
+                        : "text-muted-foreground",
+                    )}
+                  >
                     {service.latencyMs}ms
                   </TableCell>
-                  <TableCell className={cn("text-right font-mono", critical ? "text-critical" : degraded ? "text-warning" : "text-muted-foreground")}>
+                  <TableCell
+                    className={cn(
+                      "text-right font-mono",
+                      critical
+                        ? "text-critical"
+                        : degraded
+                          ? "text-warning"
+                          : "text-muted-foreground",
+                    )}
+                  >
                     {formatPercent(service.errorRate, 2)}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-right font-mono">
@@ -308,14 +419,14 @@ function ServiceHealthTable({
 
 function RecentDeployments({
   deployments,
-  services,
 }: {
   deployments: NonNullable<ReturnType<typeof useDeployments>["data"]>;
-  services: NonNullable<ReturnType<typeof useServices>["data"]>;
 }) {
-  const recent = deployments.slice().sort((a, b) => b.startedAt.localeCompare(a.startedAt)).slice(0, 3);
-  const name = (serviceId: string) =>
-    (services ?? []).find((s) => s.id === serviceId)?.name ?? serviceId;
+  const recent = deployments
+    .slice()
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+    .slice(0, 3);
+  const name = useServiceNames();
 
   return (
     <Card className="gap-0">
@@ -334,12 +445,17 @@ function RecentDeployments({
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-3">
         {recent.map((dep) => (
-          <div key={dep.id} className="flex items-center gap-3 rounded-md border border-border/60 p-3">
+          <div
+            key={dep.id}
+            className="flex items-center gap-3 rounded-md border border-border/60 p-3"
+          >
             <span className="bg-info/10 text-info flex size-9 shrink-0 items-center justify-center rounded-md border border-info/20">
               <Crosshair className="size-4" />
             </span>
             <div className="min-w-0">
-              <p className="truncate font-mono text-sm font-medium">{dep.version}</p>
+              <p className="truncate font-mono text-sm font-medium">
+                {dep.version}
+              </p>
               <p className="text-muted-foreground truncate text-xs">
                 {name(dep.serviceId)}
               </p>

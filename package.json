@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Rootline — From incident to root cause. Intelligent incident investigation & operations platform.",
+  "type": "module",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -13,9 +14,36 @@
     "start": "npm run start --workspace @rootline/web",
     "lint": "npm run lint --workspace @rootline/web",
     "typecheck": "npm run typecheck --workspace @rootline/web && npm run typecheck --workspace @rootline/types && npm run typecheck --workspace @rootline/ui",
-    "generate:mock": "node data/scripts/generate-mock.mjs"
+    "generate:mock": "node data/scripts/generate-mock.mjs",
+    "test:mock": "node data/scripts/generate-mock.mjs --check",
+    "api:install": "python3 -m venv apps/api/.venv && apps/api/.venv/bin/pip install -r apps/api/requirements.txt",
+    "api:dev": "cd apps/api && .venv/bin/python -m uvicorn app.main:app --reload --port 8000",
+    "api:test": "cd apps/api && .venv/bin/python -m pytest -q",
+    "infra:up": "docker compose -f apps/api/docker-compose.yml up -d --build",
+    "infra:down": "docker compose -f apps/api/docker-compose.yml down",
+    "infra:logs": "docker compose -f apps/api/docker-compose.yml logs -f api",
+    "infra:reset": "docker compose -f apps/api/docker-compose.yml down -v && npm run infra:up",
+    "test": "npm run typecheck && npm run lint && npm run test:mock && npm run api:test",
+    "prepare": "husky",
+    "commitlint": "commitlint --edit",
+    "lint:staged": "lint-staged",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.9.9"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,md,yml,yaml}": "prettier --write",
+    "apps/web/**/*.{ts,tsx}": "npx eslint --config apps/web/eslint.config.mjs --fix"
   }
 }

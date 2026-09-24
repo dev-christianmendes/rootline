@@ -19,7 +19,7 @@
  *
  * Run: node data/scripts/generate-mock.mjs
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -45,10 +45,21 @@ const noise = (amp) => () => (rnd() * 2 - 1) * amp;
 const ISO = (d) => d.toISOString();
 
 /* ------------------------------------------------------------------ */
-/* Time helpers — everything is UTC, same "today"                      */
+/* Time helpers — everything is UTC, anchored to a FIXED date          */
 /* ------------------------------------------------------------------ */
-const now = new Date();
-const DAY = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+/*
+ * The scenario anchor must be a literal constant, not derived from
+ * new Date(): the CI "mock-data determinism" job regenerates the dataset
+ * and asserts no diff, so a wall-clock anchor would break it on any day
+ * other than the generation day. Override with MOCK_BASE_DATE=YYYY-MM-DD
+ * for date-shifted local development.
+ */
+const BASE_ISO = process.env.MOCK_BASE_DATE ?? "2026-09-24";
+if (!/^\d{4}-\d{2}-\d{2}$/.test(BASE_ISO)) {
+  throw new Error(`MOCK_BASE_DATE must be YYYY-MM-DD, got "${BASE_ISO}"`);
+}
+const [BY, BM, BD] = BASE_ISO.split("-").map(Number);
+const DAY = Date.UTC(BY, BM - 1, BD);
 const at = (h, m, s = 0) => ISO(new Date(DAY + ((h * 60 + m) * 60 + s) * 1000));
 
 const BASE = at(13, 50);
@@ -428,17 +439,51 @@ metrics.push(
   }),
 );
 
-// healthy references
+/*
+ * Remaining services. Every service in services.json gets at least a latency
+ * and an error-rate series so no service detail page renders an empty chart.
+ * Window is 13:50 -> 14:35, so in-window values reflect the *current* state of
+ * each incident: catalog-api is still MITIGATING (degraded), while auth-api
+ * and search-indexer have already recovered.
+ */
 for (const [sid, baseLat, baseErr] of [
   ["api-gateway", 84, 0.12],
   ["checkout-api", 268, 1.1],
-  ["catalog-api", 96, 0.18],
+  ["frontend-web", 142, 0.22],
+  ["notification-worker", 18, 0.05],
+  ["search-indexer", 210, 0.14],
+  ["postgres-primary", 190, 0.04],
+  ["redis-cache", 12, 0.01],
+  ["kafka-bus", 4, 0.02],
 ]) {
   metrics.push(
     series(sid, "latency_ms", "ms", () => baseLat + noise(8)()),
     series(sid, "error_rate", "%", () => baseErr + noise(0.05)()),
   );
 }
+
+// catalog-api — still degraded (status MITIGATING), index rebuild in progress
+metrics.push(
+  series("catalog-api", "latency_ms", "ms", (i) => {
+    const m = minutesFrom(i);
+    if (m < 14 * 60 + 10) return 96 + noise(8)();
+    return 640 + noise(70)();
+  }),
+  series("catalog-api", "error_rate", "%", (i) => {
+    const m = minutesFrom(i);
+    if (m < 14 * 60 + 10) return 0.18 + noise(0.05)();
+    return 1.9 + noise(0.35)();
+  }),
+);
+
+// capacity signals for the infrastructure services the narrative references
+metrics.push(
+  series("postgres-primary", "cpu_usage", "%", () => 41 + noise(5)()),
+  series("postgres-primary", "memory_usage", "%", () => 63 + noise(3)()),
+  series("redis-cache", "cpu_usage", "%", () => 22 + noise(3)()),
+  series("redis-cache", "memory_usage", "%", () => 47 + noise(2)()),
+  series("kafka-bus", "request_rate", "msg/s", () => 18400 + noise(700)()),
+);
 
 /* ------------------------------------------------------------------ */
 /* Logs (structured, JetBrains Mono-friendly)                          */
@@ -610,6 +655,69 @@ const traces = [
       { spanId: "sp-o3", parentSpanId: "sp-o2", name: "authorize payment", service: "payment-api", operation: "payment.authorize", startedAt: at(13, 58, 22), durationMs: 180, status: "ok" },
     ],
   },
+  // INC-2390 — auth-api slow session validation (cache miss path)
+  {
+    traceId: "t-4a1d7c",
+    incidentId: "INC-2390",
+    serviceId: "auth-api",
+    name: "POST /session/validate",
+    operation: "/session/validate",
+    startedAt: at(13, 20, 15),
+    durationMs: 918,
+    status: "error",
+    spans: [
+      { spanId: "sp-au1", name: "serve /session/validate", service: "api-gateway", operation: "http", startedAt: at(13, 20, 15), durationMs: 918, status: "ok" },
+      { spanId: "sp-au2", parentSpanId: "sp-au1", name: "validate session", service: "auth-api", operation: "session.validate", startedAt: at(13, 20, 15), durationMs: 884, status: "error", error: "session cache miss, degraded to source lookup" },
+      { spanId: "sp-au3", parentSpanId: "sp-au2", name: "lookup session", service: "redis-cache", operation: "cache.get", startedAt: at(13, 20, 15), durationMs: 642, status: "error", error: "MISS" },
+      { spanId: "sp-au4", parentSpanId: "sp-au2", name: "read session row", service: "postgres-primary", operation: "sql.select", startedAt: at(13, 20, 15), durationMs: 231, status: "ok" },
+    ],
+  },
+  {
+    traceId: "t-6b8e0f",
+    incidentId: "INC-2390",
+    serviceId: "auth-api",
+    name: "POST /session/validate",
+    operation: "/session/validate",
+    startedAt: at(13, 40, 30),
+    durationMs: 104,
+    status: "ok",
+    spans: [
+      { spanId: "sp-av1", name: "serve /session/validate", service: "api-gateway", operation: "http", startedAt: at(13, 40, 30), durationMs: 104, status: "ok" },
+      { spanId: "sp-av2", parentSpanId: "sp-av1", name: "validate session", service: "auth-api", operation: "session.validate", startedAt: at(13, 40, 30), durationMs: 88, status: "ok" },
+      { spanId: "sp-av3", parentSpanId: "sp-av2", name: "lookup session", service: "redis-cache", operation: "cache.get", startedAt: at(13, 40, 30), durationMs: 11, status: "ok" },
+    ],
+  },
+  // INC-2389 — catalog-api degraded search during index rebuild
+  {
+    traceId: "t-2f5b9d",
+    incidentId: "INC-2389",
+    serviceId: "catalog-api",
+    name: "GET /catalog/search",
+    operation: "/catalog/search",
+    startedAt: at(14, 12, 8),
+    durationMs: 1187,
+    status: "error",
+    spans: [
+      { spanId: "sp-ca1", name: "serve /catalog/search", service: "api-gateway", operation: "http", startedAt: at(14, 12, 8), durationMs: 1187, status: "ok" },
+      { spanId: "sp-ca2", parentSpanId: "sp-ca1", name: "search catalog", service: "catalog-api", operation: "catalog.search", startedAt: at(14, 12, 8), durationMs: 1104, status: "error", error: "partial results: index segment not yet searchable" },
+      { spanId: "sp-ca3", parentSpanId: "sp-ca2", name: "query index", service: "search-indexer", operation: "index.query", startedAt: at(14, 12, 8), durationMs: 1055, status: "error", error: "rebuilding in progress" },
+    ],
+  },
+  // INC-2388 — search-indexer consumer lag on kafka-bus
+  {
+    traceId: "t-7c3e2a",
+    incidentId: "INC-2388",
+    serviceId: "search-indexer",
+    name: "consume catalog.events",
+    operation: "kafka.consume",
+    startedAt: at(9, 50, 4),
+    durationMs: 742,
+    status: "error",
+    spans: [
+      { spanId: "sp-si1", name: "poll batch", service: "kafka-bus", operation: "kafka.poll", startedAt: at(9, 50, 4), durationMs: 742, status: "error", error: "rebalance in progress" },
+      { spanId: "sp-si2", parentSpanId: "sp-si1", name: "index products", service: "search-indexer", operation: "index.apply", startedAt: at(9, 50, 4), durationMs: 318, status: "error", error: "assignment revoked" },
+    ],
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -748,7 +856,437 @@ const hypotheses = [
       ],
     },
   },
+  {
+    incidentId: "INC-2390",
+    investigation: {
+      id: "inv-2390",
+      incidentId: "INC-2390",
+      generatedAt: at(13, 28, 40),
+      hypotheses: [
+        {
+          id: "h-redis-miss",
+          title: "Redis session cache miss storm on auth-api",
+          confidence: 0.74,
+          summary:
+            "Session validation fell back to source lookups after the session cache hit rate collapsed, multiplying p95. Cache warming at 13:40 restored latency to baseline, which confirms the cache path as the cause.",
+          status: "candidate",
+          evidence: [
+            {
+              id: "ev-90-1",
+              kind: "fact",
+              label: "Cache miss logged at 13:20",
+              detail: "session validation reported cache miss and took 640ms.",
+              source: "logs/auth-api",
+              sourceType: "logs",
+              impact: "supporting",
+              time: at(13, 20, 15),
+            },
+            {
+              id: "ev-90-2",
+              kind: "fact",
+              label: "Trace shows 642ms stuck in cache.get",
+              detail: "sp-au3 lookup session on redis-cache accounts for 70% of the total span.",
+              source: "t-4a1d7c",
+              sourceType: "trace",
+              impact: "supporting",
+              time: at(13, 20, 15),
+            },
+            {
+              id: "ev-90-3",
+              kind: "fact",
+              label: "Postgres source lookup healthy",
+              detail: "read session row returned in 231ms, ruling out the database as the bottleneck.",
+              source: "t-4a1d7c",
+              sourceType: "dependency",
+              impact: "supporting",
+              time: at(13, 20, 15),
+            },
+            {
+              id: "ev-90-4",
+              kind: "fact",
+              label: "Warming the cache resolved it",
+              detail: "After m.silva warmed session-cache at 13:40, p95 dropped to ~96ms.",
+              source: "logs/auth-api",
+              sourceType: "logs",
+              impact: "supporting",
+              time: at(13, 40, 12),
+            },
+            {
+              id: "ev-90-5",
+              kind: "inference",
+              label: "No deploy in the window",
+              detail: "No auth-api deployment between 13:00 and 14:35, so no code change triggered this.",
+              source: "deployments/auth-api",
+              sourceType: "deployment",
+              impact: "counter",
+            },
+          ],
+          counterEvidence: [
+            {
+              id: "cev-90-1",
+              kind: "inference",
+              label: "Redis server itself stayed fast",
+              detail: "redis-cache p50 latency held at ~12ms with healthy CPU; the miss rate, not Redis speed, is the problem.",
+              source: "redis-cache/metrics/latency_ms",
+              sourceType: "dependency",
+              impact: "counter",
+              time: at(13, 30),
+            },
+          ],
+        },
+        {
+          id: "h-auth-traffic",
+          title: "Traffic spike on the auth path",
+          confidence: 0.18,
+          summary:
+            "Alternative hypothesis: a burst of logins could stretch the connection pool. Log volume and error rate stayed flat, so this is unlikely.",
+          status: "candidate",
+          evidence: [
+            {
+              id: "ev-90-6",
+              kind: "fact",
+              label: "Concurrent validations elevated",
+              detail: "checkout-sessions pool reached 78% consumption during the window.",
+              source: "logs/auth-api",
+              sourceType: "logs",
+              impact: "supporting",
+              time: at(13, 25, 2),
+            },
+          ],
+          counterEvidence: [
+            {
+              id: "cev-90-2",
+              kind: "fact",
+              label: "Error rate stayed low",
+              detail: "auth-api error rate peaked at ~1.3%, well within tolerance for a capacity problem.",
+              source: "auth-api/metrics/error_rate",
+              sourceType: "metrics",
+              impact: "counter",
+              time: at(13, 30),
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    incidentId: "INC-2389",
+    investigation: {
+      id: "inv-2389",
+      incidentId: "INC-2389",
+      generatedAt: at(12, 34, 10),
+      hypotheses: [
+        {
+          id: "h-index-rebuild",
+          title: "Full index rebuild degraded catalog search",
+          confidence: 0.69,
+          summary:
+            "The rebuild started at 12:30 makes freshly indexed segments unsearchable, so queries return partial results. The degradation predates the rebuild, which points at the earlier index refresh as the trigger rather than the rebuild itself.",
+          status: "candidate",
+          evidence: [
+            {
+              id: "ev-89-1",
+              kind: "fact",
+              label: "Search p95 degraded at 12:05",
+              detail: "Catalog search p95 exceeded 800ms, before the rebuild was triggered.",
+              source: "logs/catalog-api",
+              sourceType: "logs",
+              impact: "supporting",
+              time: at(12, 5, 20),
+            },
+            {
+              id: "ev-89-2",
+              kind: "fact",
+              label: "Trace shows unsearchable segment",
+              detail: "index.query returned 'rebuilding in progress' for the search-indexer span.",
+              source: "t-2f5b9d",
+              sourceType: "trace",
+              impact: "supporting",
+              time: at(14, 12, 8),
+            },
+            {
+              id: "ev-89-3",
+              kind: "fact",
+              label: "Index rebuild in progress",
+              detail: "A. Kumar triggered a full index rebuild at 12:30.",
+              source: "incident/timeline",
+              sourceType: "incident",
+              impact: "supporting",
+              time: at(12, 30),
+            },
+            {
+              id: "ev-89-4",
+              kind: "fact",
+              label: "Still degraded in the current window",
+              detail: "catalog-api p95 holds around 640ms and error rate near 1.9%.",
+              source: "catalog-api/metrics/latency_ms",
+              sourceType: "metrics",
+              impact: "supporting",
+              time: at(14, 20),
+            },
+          ],
+          counterEvidence: [
+            {
+              id: "cev-89-1",
+              kind: "inference",
+              label: "Onset predates the rebuild",
+              detail: "Latency was already above 800ms at 12:05, 25 minutes before the rebuild started, so the rebuild is not the sole cause.",
+              source: "incident/timeline",
+              sourceType: "incident",
+              impact: "counter",
+            },
+          ],
+        },
+        {
+          id: "h-indexer-lag",
+          title: "search-indexer backlog starving the query path",
+          confidence: 0.27,
+          summary:
+            "Alternative hypothesis: the indexer still lags behind kafka-bus, so segments are missing at query time. This is a real contributing factor and overlaps with INC-2388.",
+          status: "candidate",
+          evidence: [
+            {
+              id: "ev-89-5",
+              kind: "fact",
+              label: "Indexer lag reported earlier",
+              detail: "Consumer lag on search-indexer was already a known problem resolved in INC-2388.",
+              source: "logs/search-indexer",
+              sourceType: "logs",
+              impact: "supporting",
+              time: at(9, 30),            },
+          ],
+          counterEvidence: [
+            {
+              id: "cev-89-2",
+              kind: "fact",
+              label: "Indexer lag is at zero",
+              detail: "INC-2388 resolved the consumer group imbalance; lag returned to 0 at 10:12.",
+              source: "incident/timeline",
+              sourceType: "incident",
+              impact: "counter",
+              time: at(10, 12),
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    incidentId: "INC-2388",
+    investigation: {
+      id: "inv-2388",
+      incidentId: "INC-2388",
+      generatedAt: at(9, 58, 30),
+      hypotheses: [
+        {
+          id: "h-consumer-imbalance",
+          title: "Consumer group imbalance on search-indexer",
+          confidence: 0.88,
+          summary:
+            "Partitions were unevenly assigned across indexer replicas, so a subset of partitions went unconsumed and the index went stale. Rebalancing at 09:55 restored full coverage.",
+          status: "accepted",
+          evidence: [
+            {
+              id: "ev-88-1",
+              kind: "fact",
+              label: "Lag growing from 09:30",
+              detail: "Consumer lag on partition 4 climbed steadily from 12000 messages.",
+              source: "logs/search-indexer",
+              sourceType: "logs",
+              impact: "supporting",
+              time: at(9, 30),
+            },
+            {
+              id: "ev-88-2",
+              kind: "fact",
+              label: "Revoked assignment in trace",
+              detail: "poll batch failed with 'rebalance in progress'; index.apply saw 'assignment revoked'.",
+              source: "t-7c3e2a",
+              sourceType: "trace",
+              impact: "supporting",
+              time: at(9, 50, 4),
+            },
+            {
+              id: "ev-88-3",
+              kind: "fact",
+              label: "Rebalance fixed it",
+              detail: "Partitions were rebalanced at 09:55 and lag returned to 0 by 10:12.",
+              source: "logs/search-indexer",
+              sourceType: "logs",
+              impact: "supporting",
+              time: at(9, 55),
+            },
+            {
+              id: "ev-88-4",
+              kind: "inference",
+              label: "kafka-bus itself healthy",
+              detail: "Broker throughput and latency were normal, isolating the fault to the consumer side.",
+              source: "kafka-bus/metrics",
+              sourceType: "dependency",
+              impact: "counter",
+            },
+          ],
+          counterEvidence: [],
+        },
+        {
+          id: "h-indexer-capacity",
+          title: "Indexer replica CPU saturation",
+          confidence: 0.12,
+          summary:
+            "Alternative hypothesis: replicas were CPU-bound and could not keep up. Resource usage stayed well below saturation.",
+          status: "dismissed",
+          evidence: [
+            {
+              id: "ev-88-5",
+              kind: "inference",
+              label: "Backlog implies slow consumption",
+              detail: "A growing lag is consistent with under-provisioned consumers.",
+              source: "incident/timeline",
+              sourceType: "incident",
+              impact: "supporting",
+              time: at(9, 40),
+            },
+          ],
+          counterEvidence: [
+            {
+              id: "cev-88-1",
+              kind: "fact",
+              label: "CPU far from saturation",
+              detail: "search-indexer CPU never exceeded ~28% during the incident window.",
+              source: "search-indexer/metrics/cpu_usage",
+              sourceType: "infrastructure",
+              impact: "counter",
+              time: at(9, 50),
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
+
+/* ------------------------------------------------------------------ */
+/* Validation — fail fast if output drifts from the frontend schema    */
+/* ------------------------------------------------------------------ */
+function assert(condition, message) {
+  if (!condition) throw new Error(`generate-mock validation failed: ${message}`);
+}
+
+function validate() {
+  const serviceIds = new Set(services.map((s) => s.id));
+
+  assert(Array.isArray(services) && services.length > 0, "services must be a non-empty array");
+  for (const s of services) {
+    assert(typeof s.id === "string" && typeof s.name === "string" && typeof s.kind === "string", `service ${s.id ?? "?"} missing id/name/kind`);
+    assert(Array.isArray(s.dependencies), `service ${s.id} dependencies must be an array`);
+    for (const dep of s.dependencies) assert(serviceIds.has(dep), `service ${s.id} depends on unknown service ${dep}`);
+  }
+
+  assert(Array.isArray(incidents) && incidents.length > 0, "incidents must be a non-empty array");
+  for (const inc of incidents) {
+    assert(inc.id?.startsWith("INC-"), `incident id must start with INC-: ${inc.id}`);
+    assert(serviceIds.has(inc.serviceId), `incident ${inc.id} references unknown service ${inc.serviceId}`);
+    assert(["P1", "P2", "P3", "P4"].includes(inc.severity), `incident ${inc.id} invalid severity ${inc.severity}`);
+    assert(["DETECTED", "INVESTIGATING", "MITIGATING", "MONITORING", "RESOLVED"].includes(inc.status), `incident ${inc.id} invalid status ${inc.status}`);
+    assert(Array.isArray(inc.timeline) && inc.timeline.length > 0, `incident ${inc.id} timeline must be non-empty`);
+    assert(Array.isArray(inc.affectedServices), `incident ${inc.id} affectedServices must be an array`);
+  }
+
+  assert(Array.isArray(metrics) && metrics.length > 0, "metrics must be a non-empty array");
+  const metricKeys = new Set();
+  const METRIC_NAMES = ["latency_ms", "error_rate", "request_rate", "cpu_usage", "memory_usage"];
+  for (const m of metrics) {
+    assert(serviceIds.has(m.serviceId), `metric series references unknown service ${m.serviceId}`);
+    assert(METRIC_NAMES.includes(m.metric), `metric ${m.serviceId}/${m.metric} has unknown metric name`);
+    const key = `${m.serviceId}/${m.metric}`;
+    assert(!metricKeys.has(key), `duplicate metric series ${key}`);
+    metricKeys.add(key);
+    assert(Array.isArray(m.points) && m.points.length > 0, `metric ${m.serviceId}/${m.metric} has no points`);
+    assert(m.points.every((p) => typeof p.timestamp === "string" && typeof p.value === "number"), `metric ${m.serviceId}/${m.metric} has invalid points`);
+  }
+  // Every service must expose at least one series, otherwise its detail page
+  // renders an empty chart.
+  for (const id of serviceIds) {
+    assert(
+      metrics.some((m) => m.serviceId === id),
+      `service ${id} has no metric series`,
+    );
+  }
+
+  assert(Array.isArray(deployments), "deployments must be an array");
+  const deploymentIds = new Set();
+  for (const d of deployments) {
+    assert(serviceIds.has(d.serviceId), `deployment ${d.id} references unknown service ${d.serviceId}`);
+    assert(!deploymentIds.has(d.id), `duplicate deployment id ${d.id}`);
+    deploymentIds.add(d.id);
+  }
+
+  assert(Array.isArray(traces), "traces must be an array");
+  const traceIds = new Set();
+  for (const t of traces) {
+    assert(serviceIds.has(t.serviceId), `trace ${t.traceId} references unknown service ${t.serviceId}`);
+    assert(!traceIds.has(t.traceId), `duplicate trace id ${t.traceId}`);
+    traceIds.add(t.traceId);
+    assert(Array.isArray(t.spans) && t.spans.length > 0, `trace ${t.traceId} has no spans`);
+    const spanIds = new Set();
+    for (const s of t.spans) {
+      assert(!spanIds.has(s.spanId), `duplicate span id ${s.spanId} in trace ${t.traceId}`);
+      spanIds.add(s.spanId);
+      assert(serviceIds.has(s.service), `span ${s.spanId} references unknown service ${s.service}`);
+    }
+  }
+
+  const hypothesisIds = new Set();
+  const EVIDENCE_KINDS = ["fact", "inference"];
+  const EVIDENCE_IMPACTS = ["supporting", "counter"];
+  const EVIDENCE_SOURCE_TYPES = [
+    "metrics", "logs", "deployment", "trace", "dependency", "infrastructure", "incident",
+  ];
+  const HYPOTHESIS_STATUSES = ["candidate", "accepted", "dismissed"];
+  assert(Array.isArray(hypotheses), "hypotheses must be an array");
+  const investigationIds = new Set();
+  for (const h of hypotheses) {
+    const inv = h.investigation;
+    assert(inv?.incidentId === h.incidentId, `investigation ${inv?.id} incidentId mismatch`);
+    assert(!investigationIds.has(inv.id), `duplicate investigation id ${inv.id}`);
+    investigationIds.add(inv.id);
+    assert(Array.isArray(inv.hypotheses) && inv.hypotheses.length > 0, `investigation ${inv.id} has no hypotheses`);
+    for (const hp of inv.hypotheses) {
+      assert(!hypothesisIds.has(hp.id), `duplicate hypothesis id ${hp.id}`);
+      hypothesisIds.add(hp.id);
+      assert(hp.confidence >= 0 && hp.confidence <= 1, `hypothesis ${hp.id} confidence out of range`);
+      assert(HYPOTHESIS_STATUSES.includes(hp.status), `hypothesis ${hp.id} invalid status ${hp.status}`);
+      assert(Array.isArray(hp.evidence) && Array.isArray(hp.counterEvidence), `hypothesis ${hp.id} evidence arrays missing`);
+      assert(hp.evidence.length > 0, `hypothesis ${hp.id} has no supporting evidence`);
+      const evidenceIds = new Set();
+      for (const ev of [...hp.evidence, ...hp.counterEvidence]) {
+        assert(!evidenceIds.has(ev.id), `duplicate evidence id ${ev.id}`);
+        evidenceIds.add(ev.id);
+        assert(EVIDENCE_KINDS.includes(ev.kind), `evidence ${ev.id} invalid kind ${ev.kind}`);
+        assert(EVIDENCE_IMPACTS.includes(ev.impact), `evidence ${ev.id} invalid impact ${ev.impact}`);
+        assert(
+          EVIDENCE_SOURCE_TYPES.includes(ev.sourceType),
+          `evidence ${ev.id} invalid sourceType ${ev.sourceType}`,
+        );
+        if (ev.time) assert(!Number.isNaN(Date.parse(ev.time)), `evidence ${ev.id} has invalid time ${ev.time}`);
+      }
+    }
+  }
+
+  // Every incident must be analyzable, otherwise the analysis endpoint 404s
+  // and the investigation link stays hidden on the incident detail page.
+  for (const inc of incidents) {
+    assert(
+      hypotheses.some((h) => h.incidentId === inc.id),
+      `incident ${inc.id} has no investigation, so its analysis endpoint would 404`,
+    );
+    // ...and must actually have telemetry to investigate.
+    assert(logs.some((l) => l.incidentId === inc.id), `incident ${inc.id} has no logs`);
+    assert(traces.some((t) => t.incidentId === inc.id), `incident ${inc.id} has no traces`);
+  }
+
+  console.log("validation passed.");
+}
 
 /* ------------------------------------------------------------------ */
 /* Write                                                               */
@@ -765,10 +1303,34 @@ const files = {
   "hypotheses.json": hypotheses,
 };
 
+validate();
+
+// `--check` regenerates in memory and only reports drift, so CI can assert the
+// committed datasets still match the generator without touching the working
+// tree. Without it the files are written.
+const check = process.argv.includes("--check");
+
+const drifted = [];
 for (const [name, data] of Object.entries(files)) {
   const file = join(OUT_DIR, name);
-  writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
-  console.log(`wrote ${file} (${Buffer.byteLength(JSON.stringify(data), "utf8")} bytes)`);
+  const serialized = JSON.stringify(data, null, 2) + "\n";
+  if (check) {
+    const current = existsSync(file) ? readFileSync(file, "utf8") : null;
+    if (current !== serialized) drifted.push(name);
+    continue;
+  }
+  writeFileSync(file, serialized);
+  console.log(`wrote ${file} (${Buffer.byteLength(serialized, "utf8")} bytes)`);
 }
 
-console.log("mock data generated.");
+if (check) {
+  if (drifted.length > 0) {
+    console.error(
+      `mock data out of date, run \`npm run generate:mock\`: ${drifted.join(", ")}`,
+    );
+    process.exit(1);
+  }
+  console.log("mock data matches the generator.");
+} else {
+  console.log("mock data generated.");
+}

@@ -1,0 +1,42 @@
+name: rootline
+
+# Host ports are overridable so the stack can run next to services that
+# already own the defaults:  ROOTLINE_API_PORT=8080 docker compose up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rootline-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rootline
+      POSTGRES_PASSWORD: rootline
+      POSTGRES_DB: rootline
+    ports:
+      - "${ROOTLINE_DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rootline -d rootline"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    container_name: rootline-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ROOTLINE_DATABASE_URL: postgresql+psycopg://rootline:rootline@postgres:5432/rootline
+      ROOTLINE_CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      ROOTLINE_AUTO_SEED: "true"
+      ROOTLINE_ANALYSIS_DELAY_MS: "900"
+    ports:
+      - "${ROOTLINE_API_PORT:-8000}:8000"
+
+volumes:
+  postgres-data:

@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Incident, IncidentStatus } from "@rootline/types";
 
 import { api } from "@/lib/api";
@@ -46,6 +42,29 @@ export function useMutationIncident(id: string) {
       api.patch<Incident>(`/incidents/${id}`, input),
     onSuccess: (incident) => {
       queryClient.setQueryData(qk.incident(id), incident);
+      void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      void queryClient.invalidateQueries({ queryKey: ["system"] });
+    },
+  });
+}
+
+export interface CreateIncidentInput {
+  title: string;
+  description?: string;
+  severity?: Incident["severity"];
+  serviceId?: string;
+  assignee?: string;
+  impact?: string;
+}
+
+export function useCreateIncident() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateIncidentInput) =>
+      api.post<Incident>("/incidents", input),
+    onSuccess: (incident) => {
+      queryClient.setQueryData(qk.incident(incident.id), incident);
       void queryClient.invalidateQueries({ queryKey: ["incidents"] });
       void queryClient.invalidateQueries({ queryKey: ["system"] });
     },

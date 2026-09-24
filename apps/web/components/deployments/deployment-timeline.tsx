@@ -24,7 +24,7 @@ import {
 
 import { useDeployments } from "@/features/deployments/use-deployments";
 import { useIncidents } from "@/features/incidents/use-incidents";
-import { useServices } from "@/features/services/use-services";
+import { useServiceNames } from "@/features/services/use-services";
 import { formatTime, SEVERITY_META } from "@/lib/format";
 import { EmptyState, LoadingBlock } from "@/components/common/states";
 
@@ -51,15 +51,12 @@ function relatedIncident(
 export function DeploymentTimeline() {
   const deployments = useDeployments();
   const incidents = useIncidents();
-  const services = useServices();
+  const serviceName = useServiceNames();
 
   if (deployments.isLoading) return <LoadingBlock />;
   const deps = deployments.data ?? [];
   const incs = incidents.data ?? [];
   if (deps.length === 0) return <EmptyState title="No deployments" />;
-
-  const serviceName = (id: string) =>
-    (services.data ?? []).find((s) => s.id === id)?.name ?? id;
 
   const all = [...deps, ...incs];
   const min = Math.min(...all.map((d) => new Date(d.startedAt).getTime()));
@@ -68,10 +65,11 @@ export function DeploymentTimeline() {
     Date.now(),
   );
   const range = Math.max(1, max - min);
-  const pct = (ts: string) =>
-    ((new Date(ts).getTime() - min) / range) * 100;
+  const pct = (ts: string) => ((new Date(ts).getTime() - min) / range) * 100;
 
-  const sorted = [...deps].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  const sorted = [...deps].sort((a, b) =>
+    b.startedAt.localeCompare(a.startedAt),
+  );
 
   return (
     <div className="space-y-6">
@@ -111,9 +109,12 @@ export function DeploymentTimeline() {
                     <TooltipContent side="top" className="max-w-xs">
                       <div className="space-y-1">
                         <p className="font-mono text-xs">
-                          {serviceName(dep.serviceId)} {dep.version} · {formatTime(dep.startedAt)}
+                          {serviceName(dep.serviceId)} {dep.version} ·{" "}
+                          {formatTime(dep.startedAt)}
                         </p>
-                        <p className="text-primary-foreground/80 text-[11px]">{dep.description}</p>
+                        <p className="text-primary-foreground/80 text-[11px]">
+                          {dep.description}
+                        </p>
                         {related ? (
                           <p className="font-mono text-[11px] text-primary-foreground/90">
                             ↔ within window of {related.id}
@@ -135,13 +136,16 @@ export function DeploymentTimeline() {
                       <span
                         className={cn(
                           "size-3 rounded-full border-2 border-background",
-                          SEVERITY_META[incident.severity].badge === "critical" ? "bg-critical" : "bg-warning",
+                          SEVERITY_META[incident.severity].badge === "critical"
+                            ? "bg-critical"
+                            : "bg-warning",
                         )}
                       />
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    {incident.id} · {incident.severity} · {formatTime(incident.startedAt)}
+                    {incident.id} · {incident.severity} ·{" "}
+                    {formatTime(incident.startedAt)}
                   </TooltipContent>
                 </Tooltip>
               ))}
@@ -151,9 +155,16 @@ export function DeploymentTimeline() {
               <span>{formatTime(new Date(max).toISOString())}</span>
             </div>
             <div className="absolute top-24 flex items-center gap-4 font-mono text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-info" /> deployment</span>
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-critical" /> deployment near incident</span>
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-warning" /> incident</span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-info" /> deployment
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-critical" /> deployment
+                near incident
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-warning" /> incident
+              </span>
             </div>
           </div>
         </CardContent>
@@ -188,14 +199,20 @@ export function DeploymentTimeline() {
                     <TableCell>
                       <Badge
                         variant={
-                          dep.status === "deployed" ? "success" : dep.status === "rolled_back" ? "warning" : "critical"
+                          dep.status === "deployed"
+                            ? "success"
+                            : dep.status === "rolled_back"
+                              ? "warning"
+                              : "critical"
                         }
                         className="font-mono text-[10px]"
                       >
                         {dep.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{dep.author}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {dep.author}
+                    </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {dep.commit.slice(0, 7)}
                     </TableCell>
@@ -205,10 +222,13 @@ export function DeploymentTimeline() {
                           href={`/incidents/${related.id}`}
                           className="text-info flex items-center gap-1 font-mono text-xs hover:underline"
                         >
-                          <Rocket className="size-3" /> {related.id} +{formatTimeDelta(dep.startedAt, related.startedAt)}
+                          <Rocket className="size-3" /> {related.id} +
+                          {formatTimeDelta(dep.startedAt, related.startedAt)}
                         </Link>
                       ) : (
-                        <span className="text-muted-foreground/60 text-xs">—</span>
+                        <span className="text-muted-foreground/60 text-xs">
+                          —
+                        </span>
                       )}
                     </TableCell>
                   </TableRow>

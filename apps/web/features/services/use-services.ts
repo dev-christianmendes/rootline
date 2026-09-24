@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { MetricSeries, Service, SystemHealth } from "@rootline/types";
 
@@ -11,6 +12,24 @@ export function useServices() {
     queryKey: qk.services,
     queryFn: () => api.get<Service[]>("/services"),
   });
+}
+
+/** Memoized id -> Service map, avoids O(n) finds across many components. */
+export function useServicesMap(): Map<string, Service> {
+  const services = useServices();
+  return React.useMemo(
+    () => new Map((services.data ?? []).map((s) => [s.id, s])),
+    [services.data],
+  );
+}
+
+/** Returns a stable (id: string) => name resolver backed by the services map. */
+export function useServiceNames(): (id: string) => string {
+  const services = useServicesMap();
+  return React.useCallback(
+    (id: string) => services.get(id)?.name ?? id,
+    [services],
+  );
 }
 
 export function useService(id: string) {

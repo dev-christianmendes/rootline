@@ -21,6 +21,27 @@ export function useInvestigation(investigationId: string) {
   });
 }
 
+/**
+ * Loads an existing investigation for an incident (read-only). No analysis
+ * is triggered here — that only happens through the explicit useAnalyze
+ * mutation when the user presses "Run analysis".
+ */
+export function useInvestigationForIncident(incidentId: string) {
+  return useQuery({
+    queryKey: qk.investigationForIncident(incidentId),
+    queryFn: () =>
+      api
+        .get<Investigation[]>(
+          `/investigations?incidentId=${encodeURIComponent(incidentId)}`,
+        )
+        .then(
+          (list) => list.find((inv) => inv.incidentId === incidentId) ?? null,
+        ),
+    enabled: Boolean(incidentId),
+  });
+}
+
+/** Kicks off (or returns) the AI analysis pipeline for an incident. */
 export function useAnalyze(incidentId: string) {
   const queryClient = useQueryClient();
 
@@ -28,28 +49,15 @@ export function useAnalyze(incidentId: string) {
     mutationFn: () =>
       api.post<Investigation>(`/incidents/${incidentId}/analyze`),
     onSuccess: (investigation) => {
-      queryClient.setQueryData(qk.analysis(incidentId), investigation);
-      queryClient.setQueryData(qk.investigation(investigation.id), investigation);
+      queryClient.setQueryData(
+        qk.investigation(investigation.id),
+        investigation,
+      );
+      queryClient.setQueryData(
+        qk.investigationForIncident(incidentId),
+        investigation,
+      );
+      queryClient.invalidateQueries({ queryKey: qk.investigations });
     },
   });
-}
-
-/**
- * Runs the analysis pipeline for an incident on mount. The current mock API
- * responds from deterministic datasets with a short artificial delay, which
- * mirrors the future backend behavior and makes the investigation UX visible.
- */
-export function useAnalysisQuery(incidentId: string) {
-  return useQuery({
-    queryKey: qk.analysis(incidentId),
-    queryFn: () => api.post<Investigation>(`/incidents/${incidentId}/analyze`),
-    enabled: Boolean(incidentId),
-    retry: false,
-    staleTime: Infinity,
-  });
-}
-
-/** Returns the last stored analysis result, if any. */
-export function useAnalysisCache(incidentId: string): Investigation | undefined {
-  return useQueryClient().getQueryData<Investigation>(qk.analysis(incidentId));
 }

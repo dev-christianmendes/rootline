@@ -23,10 +23,13 @@ import { Zap } from "lucide-react";
 import { cn } from "@rootline/ui";
 
 import { formatPercent, HEALTH_META } from "@/lib/format";
+import { chartColor } from "@/lib/chart-colors";
+import { ErrorState } from "@/components/common/states";
 import { useIncidents } from "@/features/incidents/use-incidents";
 import { useServices } from "@/features/services/use-services";
 
-type ServiceNodeData = Record<string, unknown> & Service & { activeIncident: boolean };
+type ServiceNodeData = Record<string, unknown> &
+  Service & { activeIncident: boolean };
 
 type ServiceNode = Node<ServiceNodeData, "service">;
 
@@ -86,7 +89,10 @@ function ServiceNodeView({ data }: NodeProps<ServiceNode>) {
             <span className="text-foreground">{data.latencyMs}ms</span> lat
           </span>
           <span>
-            <span className="text-foreground">{formatPercent(data.errorRate, 2)}</span> err
+            <span className="text-foreground">
+              {formatPercent(data.errorRate, 2)}
+            </span>{" "}
+            err
           </span>
           <span className="ml-auto">{data.version}</span>
         </div>
@@ -173,7 +179,19 @@ export function ServiceMap() {
   );
 
   if (services.isLoading) {
-    return <div className="h-[520px] animate-pulse rounded-lg border border-border/60 bg-card/40" />;
+    return (
+      <div className="h-[520px] animate-pulse rounded-lg border border-border/60 bg-card/40" />
+    );
+  }
+
+  if (services.isError) {
+    return (
+      <ErrorState
+        title="Unable to load service map"
+        detail={services.error?.message}
+        onRetry={() => services.refetch()}
+      />
+    );
   }
 
   return (
@@ -192,18 +210,34 @@ export function ServiceMap() {
           proOptions={{ hideAttribution: true }}
           nodesDraggable
           panOnScroll
-          defaultEdgeOptions={{ style: { stroke: "#3d3d44", strokeWidth: 1.5 }, animated: false }}
+          defaultEdgeOptions={{
+            style: { stroke: chartColor("border"), strokeWidth: 1.5 },
+            animated: false,
+          }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#1f1f23" />
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={18}
+            size={1}
+            color={chartColor("border")}
+          />
           <Controls position="bottom-right" showInteractive={false} />
           <MiniMap
             pannable
             zoomable
             position="bottom-left"
-            maskColor="rgba(10,10,11,0.8)"
+            maskColor={chartColor("background")}
             nodeColor={(node) => {
-              const heat = (node.data as { health?: Service["health"] }).health ?? "unknown";
-              return { healthy: "#22c55e", degraded: "#f59e0b", critical: "#ef4444", unknown: "#3d3d44" }[heat];
+              const heat =
+                (node.data as { health?: Service["health"] }).health ??
+                "unknown";
+              const colors: Record<Service["health"], string> = {
+                healthy: chartColor("success"),
+                degraded: chartColor("warning"),
+                critical: chartColor("critical"),
+                unknown: chartColor("muted"),
+              };
+              return colors[heat];
             }}
           />
         </ReactFlow>

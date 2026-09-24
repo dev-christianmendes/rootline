@@ -1,0 +1,10 @@
+[project]
+name = "rootline-api"
+version = "0.1.0"
+description = "Rootline API — incident investigation and correlation service."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = ["error::DeprecationWarning:app.*"]

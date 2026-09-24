@@ -1,0 +1,29 @@
+# Rootline CODEOWNERS
+# These owners will be automatically requested for review when files they own are modified.
+
+# Global owners - required for all changes
+* @chris
+
+# Backend / API
+/apps/api/ @chris
+
+# Frontend / Web
+/apps/web/ @chris
+
+# Shared packages
+/packages/types/ @chris
+/packages/ui/ @chris
+/packages/config/ @chris
+
+# Infrastructure & CI/CD
+/.github/ @chris
+/docker-compose.yml @chris
+/apps/api/Dockerfile @chris
+/apps/api/docker-compose.yml @chris
+
+# Mock data & scripts
+/data/scripts/ @chris
+/data/mock/ @chris
+
+# Documentation
+/docs/ @chris

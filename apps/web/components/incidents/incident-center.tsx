@@ -22,8 +22,13 @@ import {
 import { useIncidents } from "@/features/incidents/use-incidents";
 import { formatDuration, formatTime } from "@/lib/format";
 import { SeverityBadge, StatusBadge } from "@/components/common/badges";
-import { EmptyState, ErrorState, LoadingBlock } from "@/components/common/states";
-import { useServices } from "@/features/services/use-services";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingBlock,
+} from "@/components/common/states";
+import { useServiceNames } from "@/features/services/use-services";
+import { NewIncidentDialog } from "./new-incident-dialog";
 
 const ALL_SEVERITIES: Severity[] = ["P1", "P2", "P3", "P4"];
 const ALL_STATUSES: IncidentStatus[] = [
@@ -36,31 +41,30 @@ const ALL_STATUSES: IncidentStatus[] = [
 
 export function IncidentCenter() {
   const incidents = useIncidents();
-  const services = useServices();
+  const serviceName = useServiceNames();
 
   const [query, setQuery] = useState("");
   const [severities, setSeverities] = useState<Severity[]>([]);
   const [statuses, setStatuses] = useState<IncidentStatus[]>([]);
-
-  const serviceName = (serviceId: string) =>
-    (services.data ?? []).find((s) => s.id === serviceId)?.name ?? serviceId;
+  const [creating, setCreating] = useState(false);
 
   const filtered = useMemo(() => {
     const list = incidents.data ?? [];
     const q = query.trim().toLowerCase();
     return list
       .filter((i) => {
-        if (severities.length > 0 && !severities.includes(i.severity)) return false;
+        if (severities.length > 0 && !severities.includes(i.severity))
+          return false;
         if (statuses.length > 0 && !statuses.includes(i.status)) return false;
         if (q) {
-          const hay = `${i.id} ${i.title} ${serviceName(i.serviceId)} ${i.assignee}`.toLowerCase();
+          const hay =
+            `${i.id} ${i.title} ${serviceName(i.serviceId)} ${i.assignee}`.toLowerCase();
           if (!hay.includes(q)) return false;
         }
         return true;
       })
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incidents.data, query, severities, statuses, services.data]);
+  }, [incidents.data, query, severities, statuses, serviceName]);
 
   if (incidents.isLoading) return <LoadingBlock />;
   if (incidents.isError) {
@@ -72,7 +76,10 @@ export function IncidentCenter() {
     );
   }
 
-  const toggle = <T,>(setter: React.Dispatch<React.SetStateAction<T[]>>, value: T) => {
+  const toggle = <T,>(
+    setter: React.Dispatch<React.SetStateAction<T[]>>,
+    value: T,
+  ) => {
     setter((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
     );
@@ -182,10 +189,12 @@ export function IncidentCenter() {
         <p className="text-muted-foreground text-xs">
           {filtered.length} of {(incidents.data ?? []).length} incidents
         </p>
-        <Button size="sm">
+        <Button size="sm" onClick={() => setCreating(true)}>
           <Plus className="size-4" /> New incident
         </Button>
       </div>
+
+      <NewIncidentDialog open={creating} onOpenChange={setCreating} />
     </div>
   );
 }

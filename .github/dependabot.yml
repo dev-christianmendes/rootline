@@ -1,0 +1,123 @@
+# Dependabot Configuration for Rootline
+# This file configures automated dependency updates for both npm and pip ecosystems.
+
+version: 2
+updates:
+  # NPM dependencies (monorepo root, web, packages)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "chris"
+    assignees:
+      - "chris"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "chore(deps): "
+      include: "scope"
+    groups:
+      # Group minor and patch updates for development dependencies
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "typescript*"
+          - "prettier*"
+          - "@commitlint/*"
+          - "husky"
+          - "lint-staged"
+          - "@changesets/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group React ecosystem updates
+      react-ecosystem:
+        patterns:
+          - "react*"
+          - "@tanstack/react-query"
+          - "next*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group UI dependencies
+      ui-dependencies:
+        patterns:
+          - "@radix-ui/*"
+          - "lucide-react"
+          - "framer-motion"
+          - "recharts"
+          - "sonner"
+          - "zustand"
+          - "tw-animate-css"
+          - "@xyflow/react"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Python dependencies (API)
+  - package-ecosystem: "pip"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "chris"
+    assignees:
+      - "chris"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps): "
+      include: "scope"
+    groups:
+      # Group FastAPI ecosystem
+      fastapi-ecosystem:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+          - "sqlalchemy*"
+          - "psycopg*"
+          - "alembic*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group testing dependencies
+      test-dependencies:
+        patterns:
+          - "pytest*"
+          - "httpx*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "chris"
+    assignees:
+      - "chris"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci(deps): "
+      include: "scope"

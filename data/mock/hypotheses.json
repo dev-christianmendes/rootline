@@ -128,5 +128,307 @@
         }
       ]
     }
+  },
+  {
+    "incidentId": "INC-2390",
+    "investigation": {
+      "id": "inv-2390",
+      "incidentId": "INC-2390",
+      "generatedAt": "2026-09-24T13:28:40.000Z",
+      "hypotheses": [
+        {
+          "id": "h-redis-miss",
+          "title": "Redis session cache miss storm on auth-api",
+          "confidence": 0.74,
+          "summary": "Session validation fell back to source lookups after the session cache hit rate collapsed, multiplying p95. Cache warming at 13:40 restored latency to baseline, which confirms the cache path as the cause.",
+          "status": "candidate",
+          "evidence": [
+            {
+              "id": "ev-90-1",
+              "kind": "fact",
+              "label": "Cache miss logged at 13:20",
+              "detail": "session validation reported cache miss and took 640ms.",
+              "source": "logs/auth-api",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T13:20:15.000Z"
+            },
+            {
+              "id": "ev-90-2",
+              "kind": "fact",
+              "label": "Trace shows 642ms stuck in cache.get",
+              "detail": "sp-au3 lookup session on redis-cache accounts for 70% of the total span.",
+              "source": "t-4a1d7c",
+              "sourceType": "trace",
+              "impact": "supporting",
+              "time": "2026-09-24T13:20:15.000Z"
+            },
+            {
+              "id": "ev-90-3",
+              "kind": "fact",
+              "label": "Postgres source lookup healthy",
+              "detail": "read session row returned in 231ms, ruling out the database as the bottleneck.",
+              "source": "t-4a1d7c",
+              "sourceType": "dependency",
+              "impact": "supporting",
+              "time": "2026-09-24T13:20:15.000Z"
+            },
+            {
+              "id": "ev-90-4",
+              "kind": "fact",
+              "label": "Warming the cache resolved it",
+              "detail": "After m.silva warmed session-cache at 13:40, p95 dropped to ~96ms.",
+              "source": "logs/auth-api",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T13:40:12.000Z"
+            },
+            {
+              "id": "ev-90-5",
+              "kind": "inference",
+              "label": "No deploy in the window",
+              "detail": "No auth-api deployment between 13:00 and 14:35, so no code change triggered this.",
+              "source": "deployments/auth-api",
+              "sourceType": "deployment",
+              "impact": "counter"
+            }
+          ],
+          "counterEvidence": [
+            {
+              "id": "cev-90-1",
+              "kind": "inference",
+              "label": "Redis server itself stayed fast",
+              "detail": "redis-cache p50 latency held at ~12ms with healthy CPU; the miss rate, not Redis speed, is the problem.",
+              "source": "redis-cache/metrics/latency_ms",
+              "sourceType": "dependency",
+              "impact": "counter",
+              "time": "2026-09-24T13:30:00.000Z"
+            }
+          ]
+        },
+        {
+          "id": "h-auth-traffic",
+          "title": "Traffic spike on the auth path",
+          "confidence": 0.18,
+          "summary": "Alternative hypothesis: a burst of logins could stretch the connection pool. Log volume and error rate stayed flat, so this is unlikely.",
+          "status": "candidate",
+          "evidence": [
+            {
+              "id": "ev-90-6",
+              "kind": "fact",
+              "label": "Concurrent validations elevated",
+              "detail": "checkout-sessions pool reached 78% consumption during the window.",
+              "source": "logs/auth-api",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T13:25:02.000Z"
+            }
+          ],
+          "counterEvidence": [
+            {
+              "id": "cev-90-2",
+              "kind": "fact",
+              "label": "Error rate stayed low",
+              "detail": "auth-api error rate peaked at ~1.3%, well within tolerance for a capacity problem.",
+              "source": "auth-api/metrics/error_rate",
+              "sourceType": "metrics",
+              "impact": "counter",
+              "time": "2026-09-24T13:30:00.000Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "incidentId": "INC-2389",
+    "investigation": {
+      "id": "inv-2389",
+      "incidentId": "INC-2389",
+      "generatedAt": "2026-09-24T12:34:10.000Z",
+      "hypotheses": [
+        {
+          "id": "h-index-rebuild",
+          "title": "Full index rebuild degraded catalog search",
+          "confidence": 0.69,
+          "summary": "The rebuild started at 12:30 makes freshly indexed segments unsearchable, so queries return partial results. The degradation predates the rebuild, which points at the earlier index refresh as the trigger rather than the rebuild itself.",
+          "status": "candidate",
+          "evidence": [
+            {
+              "id": "ev-89-1",
+              "kind": "fact",
+              "label": "Search p95 degraded at 12:05",
+              "detail": "Catalog search p95 exceeded 800ms, before the rebuild was triggered.",
+              "source": "logs/catalog-api",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T12:05:20.000Z"
+            },
+            {
+              "id": "ev-89-2",
+              "kind": "fact",
+              "label": "Trace shows unsearchable segment",
+              "detail": "index.query returned 'rebuilding in progress' for the search-indexer span.",
+              "source": "t-2f5b9d",
+              "sourceType": "trace",
+              "impact": "supporting",
+              "time": "2026-09-24T14:12:08.000Z"
+            },
+            {
+              "id": "ev-89-3",
+              "kind": "fact",
+              "label": "Index rebuild in progress",
+              "detail": "A. Kumar triggered a full index rebuild at 12:30.",
+              "source": "incident/timeline",
+              "sourceType": "incident",
+              "impact": "supporting",
+              "time": "2026-09-24T12:30:00.000Z"
+            },
+            {
+              "id": "ev-89-4",
+              "kind": "fact",
+              "label": "Still degraded in the current window",
+              "detail": "catalog-api p95 holds around 640ms and error rate near 1.9%.",
+              "source": "catalog-api/metrics/latency_ms",
+              "sourceType": "metrics",
+              "impact": "supporting",
+              "time": "2026-09-24T14:20:00.000Z"
+            }
+          ],
+          "counterEvidence": [
+            {
+              "id": "cev-89-1",
+              "kind": "inference",
+              "label": "Onset predates the rebuild",
+              "detail": "Latency was already above 800ms at 12:05, 25 minutes before the rebuild started, so the rebuild is not the sole cause.",
+              "source": "incident/timeline",
+              "sourceType": "incident",
+              "impact": "counter"
+            }
+          ]
+        },
+        {
+          "id": "h-indexer-lag",
+          "title": "search-indexer backlog starving the query path",
+          "confidence": 0.27,
+          "summary": "Alternative hypothesis: the indexer still lags behind kafka-bus, so segments are missing at query time. This is a real contributing factor and overlaps with INC-2388.",
+          "status": "candidate",
+          "evidence": [
+            {
+              "id": "ev-89-5",
+              "kind": "fact",
+              "label": "Indexer lag reported earlier",
+              "detail": "Consumer lag on search-indexer was already a known problem resolved in INC-2388.",
+              "source": "logs/search-indexer",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T09:30:00.000Z"
+            }
+          ],
+          "counterEvidence": [
+            {
+              "id": "cev-89-2",
+              "kind": "fact",
+              "label": "Indexer lag is at zero",
+              "detail": "INC-2388 resolved the consumer group imbalance; lag returned to 0 at 10:12.",
+              "source": "incident/timeline",
+              "sourceType": "incident",
+              "impact": "counter",
+              "time": "2026-09-24T10:12:00.000Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "incidentId": "INC-2388",
+    "investigation": {
+      "id": "inv-2388",
+      "incidentId": "INC-2388",
+      "generatedAt": "2026-09-24T09:58:30.000Z",
+      "hypotheses": [
+        {
+          "id": "h-consumer-imbalance",
+          "title": "Consumer group imbalance on search-indexer",
+          "confidence": 0.88,
+          "summary": "Partitions were unevenly assigned across indexer replicas, so a subset of partitions went unconsumed and the index went stale. Rebalancing at 09:55 restored full coverage.",
+          "status": "accepted",
+          "evidence": [
+            {
+              "id": "ev-88-1",
+              "kind": "fact",
+              "label": "Lag growing from 09:30",
+              "detail": "Consumer lag on partition 4 climbed steadily from 12000 messages.",
+              "source": "logs/search-indexer",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T09:30:00.000Z"
+            },
+            {
+              "id": "ev-88-2",
+              "kind": "fact",
+              "label": "Revoked assignment in trace",
+              "detail": "poll batch failed with 'rebalance in progress'; index.apply saw 'assignment revoked'.",
+              "source": "t-7c3e2a",
+              "sourceType": "trace",
+              "impact": "supporting",
+              "time": "2026-09-24T09:50:04.000Z"
+            },
+            {
+              "id": "ev-88-3",
+              "kind": "fact",
+              "label": "Rebalance fixed it",
+              "detail": "Partitions were rebalanced at 09:55 and lag returned to 0 by 10:12.",
+              "source": "logs/search-indexer",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T09:55:00.000Z"
+            },
+            {
+              "id": "ev-88-4",
+              "kind": "inference",
+              "label": "kafka-bus itself healthy",
+              "detail": "Broker throughput and latency were normal, isolating the fault to the consumer side.",
+              "source": "kafka-bus/metrics",
+              "sourceType": "dependency",
+              "impact": "counter"
+            }
+          ],
+          "counterEvidence": []
+        },
+        {
+          "id": "h-indexer-capacity",
+          "title": "Indexer replica CPU saturation",
+          "confidence": 0.12,
+          "summary": "Alternative hypothesis: replicas were CPU-bound and could not keep up. Resource usage stayed well below saturation.",
+          "status": "dismissed",
+          "evidence": [
+            {
+              "id": "ev-88-5",
+              "kind": "inference",
+              "label": "Backlog implies slow consumption",
+              "detail": "A growing lag is consistent with under-provisioned consumers.",
+              "source": "incident/timeline",
+              "sourceType": "incident",
+              "impact": "supporting",
+              "time": "2026-09-24T09:40:00.000Z"
+            }
+          ],
+          "counterEvidence": [
+            {
+              "id": "cev-88-1",
+              "kind": "fact",
+              "label": "CPU far from saturation",
+              "detail": "search-indexer CPU never exceeded ~28% during the incident window.",
+              "source": "search-indexer/metrics/cpu_usage",
+              "sourceType": "infrastructure",
+              "impact": "counter",
+              "time": "2026-09-24T09:50:00.000Z"
+            }
+          ]
+        }
+      ]
+    }
   }
 ]

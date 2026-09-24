@@ -1,0 +1,56 @@
+export default {
+  extends: ["@commitlint/config-conventional"],
+  rules: {
+    "type-enum": [
+      2,
+      "always",
+      [
+        "feat",
+        "fix",
+        "refactor",
+        "perf",
+        "security",
+        "docs",
+        "chore",
+        "test",
+        "build",
+        "ci",
+        "revert",
+      ],
+    ],
+    "scope-enum": [
+      2,
+      "always",
+      [
+        "api",
+        "web",
+        "types",
+        "ui",
+        "config",
+        "infra",
+        "mock",
+        "ci",
+        "docs",
+        "deps",
+        "release",
+      ],
+    ],
+    "subject-case": [2, "always", "sentence-case"],
+    "subject-empty": [2, "never"],
+    "subject-max-length": [2, "always", 100],
+    "header-max-length": [2, "always", 120],
+    "body-max-line-length": [2, "always", 100],
+    "footer-max-line-length": [2, "always", 100],
+  },
+  prompt: {
+    messages: {
+      type: "Select the type of change that you're committing:",
+      scope: "Select the scope of this change (optional):",
+      subject: "Write a short, imperative tense description of the change:\n",
+      body: 'Provide a longer description of the change (optional). Use "|" to break new line:\n',
+      footer:
+        'List any breaking changes or issues closed by this change (optional). Use "|" to break new line:\n',
+      confirmCommit: "Are you sure you want to proceed with the commit above?",
+    },
+  },
+};

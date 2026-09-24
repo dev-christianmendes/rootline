@@ -144,5 +144,175 @@
         "status": "ok"
       }
     ]
+  },
+  {
+    "traceId": "t-4a1d7c",
+    "incidentId": "INC-2390",
+    "serviceId": "auth-api",
+    "name": "POST /session/validate",
+    "operation": "/session/validate",
+    "startedAt": "2026-09-24T13:20:15.000Z",
+    "durationMs": 918,
+    "status": "error",
+    "spans": [
+      {
+        "spanId": "sp-au1",
+        "name": "serve /session/validate",
+        "service": "api-gateway",
+        "operation": "http",
+        "startedAt": "2026-09-24T13:20:15.000Z",
+        "durationMs": 918,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-au2",
+        "parentSpanId": "sp-au1",
+        "name": "validate session",
+        "service": "auth-api",
+        "operation": "session.validate",
+        "startedAt": "2026-09-24T13:20:15.000Z",
+        "durationMs": 884,
+        "status": "error",
+        "error": "session cache miss, degraded to source lookup"
+      },
+      {
+        "spanId": "sp-au3",
+        "parentSpanId": "sp-au2",
+        "name": "lookup session",
+        "service": "redis-cache",
+        "operation": "cache.get",
+        "startedAt": "2026-09-24T13:20:15.000Z",
+        "durationMs": 642,
+        "status": "error",
+        "error": "MISS"
+      },
+      {
+        "spanId": "sp-au4",
+        "parentSpanId": "sp-au2",
+        "name": "read session row",
+        "service": "postgres-primary",
+        "operation": "sql.select",
+        "startedAt": "2026-09-24T13:20:15.000Z",
+        "durationMs": 231,
+        "status": "ok"
+      }
+    ]
+  },
+  {
+    "traceId": "t-6b8e0f",
+    "incidentId": "INC-2390",
+    "serviceId": "auth-api",
+    "name": "POST /session/validate",
+    "operation": "/session/validate",
+    "startedAt": "2026-09-24T13:40:30.000Z",
+    "durationMs": 104,
+    "status": "ok",
+    "spans": [
+      {
+        "spanId": "sp-av1",
+        "name": "serve /session/validate",
+        "service": "api-gateway",
+        "operation": "http",
+        "startedAt": "2026-09-24T13:40:30.000Z",
+        "durationMs": 104,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-av2",
+        "parentSpanId": "sp-av1",
+        "name": "validate session",
+        "service": "auth-api",
+        "operation": "session.validate",
+        "startedAt": "2026-09-24T13:40:30.000Z",
+        "durationMs": 88,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-av3",
+        "parentSpanId": "sp-av2",
+        "name": "lookup session",
+        "service": "redis-cache",
+        "operation": "cache.get",
+        "startedAt": "2026-09-24T13:40:30.000Z",
+        "durationMs": 11,
+        "status": "ok"
+      }
+    ]
+  },
+  {
+    "traceId": "t-2f5b9d",
+    "incidentId": "INC-2389",
+    "serviceId": "catalog-api",
+    "name": "GET /catalog/search",
+    "operation": "/catalog/search",
+    "startedAt": "2026-09-24T14:12:08.000Z",
+    "durationMs": 1187,
+    "status": "error",
+    "spans": [
+      {
+        "spanId": "sp-ca1",
+        "name": "serve /catalog/search",
+        "service": "api-gateway",
+        "operation": "http",
+        "startedAt": "2026-09-24T14:12:08.000Z",
+        "durationMs": 1187,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-ca2",
+        "parentSpanId": "sp-ca1",
+        "name": "search catalog",
+        "service": "catalog-api",
+        "operation": "catalog.search",
+        "startedAt": "2026-09-24T14:12:08.000Z",
+        "durationMs": 1104,
+        "status": "error",
+        "error": "partial results: index segment not yet searchable"
+      },
+      {
+        "spanId": "sp-ca3",
+        "parentSpanId": "sp-ca2",
+        "name": "query index",
+        "service": "search-indexer",
+        "operation": "index.query",
+        "startedAt": "2026-09-24T14:12:08.000Z",
+        "durationMs": 1055,
+        "status": "error",
+        "error": "rebuilding in progress"
+      }
+    ]
+  },
+  {
+    "traceId": "t-7c3e2a",
+    "incidentId": "INC-2388",
+    "serviceId": "search-indexer",
+    "name": "consume catalog.events",
+    "operation": "kafka.consume",
+    "startedAt": "2026-09-24T09:50:04.000Z",
+    "durationMs": 742,
+    "status": "error",
+    "spans": [
+      {
+        "spanId": "sp-si1",
+        "name": "poll batch",
+        "service": "kafka-bus",
+        "operation": "kafka.poll",
+        "startedAt": "2026-09-24T09:50:04.000Z",
+        "durationMs": 742,
+        "status": "error",
+        "error": "rebalance in progress"
+      },
+      {
+        "spanId": "sp-si2",
+        "parentSpanId": "sp-si1",
+        "name": "index products",
+        "service": "search-indexer",
+        "operation": "index.apply",
+        "startedAt": "2026-09-24T09:50:04.000Z",
+        "durationMs": 318,
+        "status": "error",
+        "error": "assignment revoked"
+      }
+    ]
   }
 ]

@@ -9,6 +9,7 @@ export const qk = {
   deployments: ["deployments"] as const,
   investigations: ["investigations"] as const,
   investigation: (id: string) => ["investigations", id] as const,
-  analysis: (incidentId: string) => ["analysis", incidentId] as const,
+  investigationForIncident: (incidentId: string) =>
+    ["investigations", "byIncident", incidentId] as const,
   systemHealth: ["system", "health"] as const,
 };

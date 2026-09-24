@@ -2,23 +2,54 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Database, FileClock, Layers, ScrollText, Waypoints, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Database,
+  FileClock,
+  Layers,
+  ScrollText,
+  Waypoints,
+  X,
+} from "lucide-react";
 
 import type { Investigation } from "@rootline/types";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, cn } from "@rootline/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  cn,
+} from "@rootline/ui";
 
 import { useInvestigation } from "@/features/analysis/use-analysis";
 import { useIncidents } from "@/features/incidents/use-incidents";
 import { useDeployments } from "@/features/deployments/use-deployments";
-import { useServiceMetrics, useServices } from "@/features/services/use-services";
-import { useIncidentLogs, useIncidentTraces } from "@/features/telemetry/use-telemetry";
+import {
+  useServiceMetrics,
+  useServiceNames,
+} from "@/features/services/use-services";
+import {
+  useIncidentLogs,
+  useIncidentTraces,
+} from "@/features/telemetry/use-telemetry";
 import { formatTime } from "@/lib/format";
 import { SeverityBadge, StatusBadge } from "@/components/common/badges";
-import { ErrorState, LoadingBlock, PageHeader } from "@/components/common/states";
+import {
+  ErrorState,
+  LoadingBlock,
+  PageHeader,
+} from "@/components/common/states";
 import { AnalysisResults } from "@/components/incidents/incident-analysis";
 import { EvidenceGraph } from "@/components/evidence-graph/evidence-graph";
 
-export function InvestigationWorkspace({ investigationId }: { investigationId: string }) {
+export function InvestigationWorkspace({
+  investigationId,
+}: {
+  investigationId: string;
+}) {
   const investigationQ = useInvestigation(investigationId);
   const incidents = useIncidents();
 
@@ -57,14 +88,19 @@ export function InvestigationWorkspace({ investigationId }: { investigationId: s
             Investigation
             {incident ? (
               <>
-                <Link href={`/incidents/${incident.id}`} className="font-mono text-base text-muted-foreground hover:underline">
+                <Link
+                  href={`/incidents/${incident.id}`}
+                  className="font-mono text-base text-muted-foreground hover:underline"
+                >
                   {incident.id}
                 </Link>
                 <SeverityBadge severity={incident.severity} />
                 <StatusBadge status={incident.status} />
               </>
             ) : (
-              <span className="font-mono text-base text-muted-foreground">{investigationId}</span>
+              <span className="font-mono text-base text-muted-foreground">
+                {investigationId}
+              </span>
             )}
           </span>
         }
@@ -93,7 +129,10 @@ export function InvestigationWorkspace({ investigationId }: { investigationId: s
           />
 
           <div className="space-y-6">
-            <SelectedEvidenceChips selected={selected} onClear={() => setSelected(new Set())} />
+            <SelectedEvidenceChips
+              selected={selected}
+              onClear={() => setSelected(new Set())}
+            />
 
             <AnalysisResults investigation={investigation} live />
             {incident ? (
@@ -106,7 +145,9 @@ export function InvestigationWorkspace({ investigationId }: { investigationId: s
           </div>
         </div>
       ) : (
-        <p className="text-muted-foreground text-sm">Incident data unavailable.</p>
+        <p className="text-muted-foreground text-sm">
+          Incident data unavailable.
+        </p>
       )}
     </div>
   );
@@ -131,7 +172,11 @@ function InvestigationGraphs({
         <CardTitle className="text-sm">Evidence graph</CardTitle>
       </CardHeader>
       <CardContent>
-        <EvidenceGraph incident={incident} hypothesis={topHypothesis} serviceName={serviceId} />
+        <EvidenceGraph
+          incident={incident}
+          hypothesis={topHypothesis}
+          serviceName={serviceId}
+        />
       </CardContent>
     </Card>
   );
@@ -154,7 +199,7 @@ function EvidenceRail({
   const deployments = useDeployments();
   const incidents = useIncidents();
   const incident = (incidents.data ?? []).find((i) => i.id === incidentId);
-  const services = useServices();
+  const serviceName = useServiceNames();
 
   const serviceDeployments = (deployments.data ?? []).filter(
     (d) => d.serviceId === serviceId,
@@ -162,7 +207,12 @@ function EvidenceRail({
 
   const affected = (incident?.affectedServices ?? []).map((a) => a.serviceId);
 
-  const items: { id: string; label: string; detail: string; icon: React.ReactNode }[] = [
+  const items: {
+    id: string;
+    label: string;
+    detail: string;
+    icon: React.ReactNode;
+  }[] = [
     ...(metrics.data ?? []).map((m) => ({
       id: `metric:${m.metric}`,
       label: `${m.metric.replace("_", " ")}`,
@@ -189,7 +239,7 @@ function EvidenceRail({
     })),
     ...affected.map((id) => ({
       id: `service:${id}`,
-      label: (services.data ?? []).find((s) => s.id === id)?.name ?? id,
+      label: serviceName(id),
       detail: "affected service",
       icon: <FileClock className="size-3.5" />,
     })),
@@ -206,37 +256,44 @@ function EvidenceRail({
             Select signals to add to the investigation.
           </div>
           <div className="max-h-[60vh] space-y-1 overflow-y-auto px-2">
-              {items.map((item) => {
-                const active = selected.has(item.id);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => onToggle(item.id)}
+            {items.map((item) => {
+              const active = selected.has(item.id);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onToggle(item.id)}
+                  className={cn(
+                    "flex w-full items-start gap-2 rounded-md border px-2 py-2 text-left transition-colors",
+                    active
+                      ? "border-info/40 bg-info/[0.06]"
+                      : "border-border/50 hover:bg-accent/50",
+                  )}
+                >
+                  <span
                     className={cn(
-                      "flex w-full items-start gap-2 rounded-md border px-2 py-2 text-left transition-colors",
-                      active
-                        ? "border-info/40 bg-info/[0.06]"
-                        : "border-border/50 hover:bg-accent/50",
+                      "mt-0.5",
+                      active ? "text-info" : "text-muted-foreground",
                     )}
                   >
-                    <span className={cn("mt-0.5", active ? "text-info" : "text-muted-foreground")}>
-                      {active ? <Check className="size-3.5" /> : item.icon}
+                    {active ? <Check className="size-3.5" /> : item.icon}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-medium">
+                      {item.label}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs font-medium">{item.label}</span>
-                      <span className="text-muted-foreground block truncate text-[11px]">
-                        {item.detail}
-                      </span>
+                    <span className="text-muted-foreground block truncate text-[11px]">
+                      {item.detail}
                     </span>
-                  </button>
-                );
-              })}
-              {items.length === 0 ? (
-                <p className="text-muted-foreground px-2 py-4 text-xs">
-                  No signals to display.
-                </p>
-              ) : null}
+                  </span>
+                </button>
+              );
+            })}
+            {items.length === 0 ? (
+              <p className="text-muted-foreground px-2 py-4 text-xs">
+                No signals to display.
+              </p>
+            ) : null}
           </div>
         </CardContent>
       </Card>
@@ -254,18 +311,25 @@ function SelectedEvidenceChips({
   if (selected.size === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border/70 px-4 py-3 text-xs text-muted-foreground">
-        No evidence selected yet — pick signals in the rail to include them in the
-        investigation.
+        No evidence selected yet — pick signals in the rail to include them in
+        the investigation.
       </div>
     );
   }
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-2.5">
-      <span className="text-xs font-medium">Selected evidence · {selected.size}</span>
+      <span className="text-xs font-medium">
+        Selected evidence · {selected.size}
+      </span>
       <Badge variant="secondary" className="text-muted-foreground">
         {[...selected].map((id) => id.split(":")[0]).join(", ")}
       </Badge>
-      <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs" onClick={onClear}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="ml-auto h-7 text-xs"
+        onClick={onClear}
+      >
         <X className="size-3.5" /> Clear
       </Button>
     </div>
