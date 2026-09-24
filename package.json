@@ -1,0 +1,21 @@
+{
+  "name": "rootline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rootline — From incident to root cause. Intelligent incident investigation & operations platform.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @rootline/web",
+    "build": "npm run build --workspace @rootline/web",
+    "start": "npm run start --workspace @rootline/web",
+    "lint": "npm run lint --workspace @rootline/web",
+    "typecheck": "npm run typecheck --workspace @rootline/web && npm run typecheck --workspace @rootline/types && npm run typecheck --workspace @rootline/ui",
+    "generate:mock": "node data/scripts/generate-mock.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
