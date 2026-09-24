@@ -1,0 +1,132 @@
+[
+  {
+    "incidentId": "INC-2391",
+    "investigation": {
+      "id": "inv-2391",
+      "incidentId": "INC-2391",
+      "generatedAt": "2026-09-24T14:11:12.000Z",
+      "hypotheses": [
+        {
+          "id": "h-deploy-281",
+          "title": "Recent deployment to payment-api (v2.8.1)",
+          "confidence": 0.82,
+          "summary": "The strongest temporal correlation. Error rate increased 4 minutes after v2.8.1 was released, /checkout became the most affected endpoint, and no dependency showed saturation.",
+          "status": "candidate",
+          "evidence": [
+            {
+              "id": "ev-1",
+              "kind": "fact",
+              "label": "Deployment v2.8.1 at 14:02",
+              "detail": "payment-api v2.8.1 released 4 minutes before the first error signal.",
+              "source": "dep-pay-281",
+              "sourceType": "deployment",
+              "impact": "supporting",
+              "time": "2026-09-24T14:02:00.000Z"
+            },
+            {
+              "id": "ev-2",
+              "kind": "fact",
+              "label": "Error rate +38%",
+              "detail": "HTTP 500 rate increased 38% after deployment; /checkout most affected.",
+              "source": "payment-api/metrics/error_rate",
+              "sourceType": "metrics",
+              "impact": "supporting",
+              "time": "2026-09-24T14:06:00.000Z"
+            },
+            {
+              "id": "ev-3",
+              "kind": "inference",
+              "label": "Temporal correlation tight (+4m)",
+              "detail": "Error onset followed the deployment window by ~4 minutes.",
+              "source": "incident/timeline",
+              "sourceType": "incident",
+              "impact": "supporting"
+            },
+            {
+              "id": "ev-4",
+              "kind": "fact",
+              "label": "Database latency stable",
+              "detail": "PostgreSQL p95 stayed at ~190ms during the window.",
+              "source": "postgres-primary/metrics/latency_ms",
+              "sourceType": "dependency",
+              "impact": "supporting",
+              "time": "2026-09-24T14:06:10.000Z"
+            },
+            {
+              "id": "ev-5",
+              "kind": "fact",
+              "label": "Redis healthy",
+              "detail": "Cache hit rate 99.1% and latency ~12ms.",
+              "source": "redis-cache/metrics",
+              "sourceType": "dependency",
+              "impact": "supporting",
+              "time": "2026-09-24T14:06:10.000Z"
+            },
+            {
+              "id": "ev-6",
+              "kind": "fact",
+              "label": "CPU / memory normal",
+              "detail": "payment-api CPU ~66%, memory ~61%; no saturation.",
+              "source": "payment-api/metrics/cpu_usage",
+              "sourceType": "infrastructure",
+              "impact": "supporting",
+              "time": "2026-09-24T14:08:00.000Z"
+            },
+            {
+              "id": "ev-7",
+              "kind": "fact",
+              "label": "Connection resets in authorize step",
+              "detail": "authorize failed with 'connection reset' against postgres-primary.",
+              "source": "logs/payment-api",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T14:06:18.000Z"
+            }
+          ],
+          "counterEvidence": [
+            {
+              "id": "cev-1",
+              "kind": "inference",
+              "label": "No code diff observed on authorize path",
+              "detail": "v2.8.1 touched checkout retry backoff; not the authorize code directly.",
+              "source": "deployment diff v2.8.0..v2.8.1",
+              "sourceType": "deployment",
+              "impact": "counter"
+            }
+          ]
+        },
+        {
+          "id": "h-redis",
+          "title": "Redis connection degradation",
+          "confidence": 0.21,
+          "summary": "Alternative hypothesis: connection pool warnings appeared before the error spike, but Redis itself reported healthy cache hit rates.",
+          "status": "candidate",
+          "evidence": [
+            {
+              "id": "ev-8",
+              "kind": "fact",
+              "label": "Pool warnings at 14:05",
+              "detail": "Checkout-sessions pool at 78% usage.",
+              "source": "logs/payment-api",
+              "sourceType": "logs",
+              "impact": "supporting",
+              "time": "2026-09-24T14:05:41.000Z"
+            }
+          ],
+          "counterEvidence": [
+            {
+              "id": "cev-2",
+              "kind": "fact",
+              "label": "Redis latency healthy",
+              "detail": "~12ms p50, 99.1% hit rate during the window.",
+              "source": "redis-cache/metrics",
+              "sourceType": "dependency",
+              "impact": "counter",
+              "time": "2026-09-24T14:06:10.000Z"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

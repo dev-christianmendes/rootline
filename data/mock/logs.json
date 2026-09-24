@@ -1,0 +1,309 @@
+[
+  {
+    "id": "log-001",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:02:09.000Z",
+    "level": "info",
+    "message": "deployment v2.8.1 complete",
+    "fields": {
+      "version": "v2.8.1",
+      "commit": "a1b2c3d",
+      "author": "j.chen"
+    }
+  },
+  {
+    "id": "log-002",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:02:15.000Z",
+    "level": "info",
+    "message": "started 8 replicas / 256MB reserved",
+    "fields": {
+      "replicas": 8
+    }
+  },
+  {
+    "id": "log-003",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:05:02.000Z",
+    "level": "warn",
+    "message": "p50 latency above threshold",
+    "fields": {
+      "metric": "latency_ms",
+      "value": 138
+    }
+  },
+  {
+    "id": "log-004",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:05:41.000Z",
+    "level": "warn",
+    "message": "connection pool 78% consumed",
+    "fields": {
+      "pool": "checkout-sessions",
+      "usage": 78
+    }
+  },
+  {
+    "id": "log-005",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:06:02.000Z",
+    "level": "error",
+    "message": "http 500 POST /checkout",
+    "fields": {
+      "status": 500,
+      "path": "/checkout",
+      "trace": "t-9c2f1a"
+    }
+  },
+  {
+    "id": "log-006",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:06:09.000Z",
+    "level": "error",
+    "message": "http 500 POST /checkout",
+    "fields": {
+      "status": 500,
+      "path": "/checkout",
+      "trace": "t-7b3d0e"
+    }
+  },
+  {
+    "id": "log-007",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:06:18.000Z",
+    "level": "error",
+    "message": "authorize failed psycopg2.OperationalError connection reset",
+    "fields": {
+      "operation": "authorize",
+      "error": "connection_reset",
+      "trace": "t-9c2f1a"
+    }
+  },
+  {
+    "id": "log-008",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:06:33.000Z",
+    "level": "error",
+    "message": "authorize failed psycopg2.OperationalError connection reset",
+    "fields": {
+      "operation": "authorize",
+      "error": "connection_reset"
+    }
+  },
+  {
+    "id": "log-009",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:07:04.000Z",
+    "level": "error",
+    "message": "http 500 POST /checkout",
+    "fields": {
+      "status": 500,
+      "path": "/checkout"
+    }
+  },
+  {
+    "id": "log-010",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:07:22.000Z",
+    "level": "warn",
+    "message": "pool exhausted retrying",
+    "fields": {
+      "pool": "checkout-sessions",
+      "retries": 3
+    }
+  },
+  {
+    "id": "log-011",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:07:48.000Z",
+    "level": "error",
+    "message": "http 500 POST /checkout",
+    "fields": {
+      "status": 500,
+      "path": "/checkout"
+    }
+  },
+  {
+    "id": "log-012",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:08:01.000Z",
+    "level": "info",
+    "message": "incident INC-2391 opened by rootline",
+    "fields": {
+      "severity": "P1",
+      "detected": true
+    }
+  },
+  {
+    "id": "log-013",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:08:30.000Z",
+    "level": "info",
+    "message": "investigation INC-2391 started",
+    "fields": {
+      "engine": "correlation"
+    }
+  },
+  {
+    "id": "log-014",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:10:04.000Z",
+    "level": "info",
+    "message": "correlated deployment v2.8.1 -> /checkout",
+    "fields": {
+      "ref": "dep-pay-281",
+      "endpoint": "/checkout"
+    }
+  },
+  {
+    "id": "log-015",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:11:12.000Z",
+    "level": "info",
+    "message": "hypothesis generated deployment v2.8.1 conf=0.82",
+    "fields": {
+      "confidence": 0.82,
+      "hypothesis": "h-deploy-281"
+    }
+  },
+  {
+    "id": "log-016",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:09:40.000Z",
+    "level": "info",
+    "message": "opened by l.chen",
+    "fields": {
+      "assignee": "l.chen"
+    }
+  },
+  {
+    "id": "log-017",
+    "serviceId": "payment-api",
+    "incidentId": "INC-2391",
+    "timestamp": "2026-09-24T14:12:05.000Z",
+    "level": "info",
+    "message": "l.chen viewing deployment diff v2.8.0..v2.8.1",
+    "fields": {
+      "diff": "12 files changed"
+    }
+  },
+  {
+    "id": "log-018",
+    "serviceId": "auth-api",
+    "incidentId": "INC-2390",
+    "timestamp": "2026-09-24T13:20:15.000Z",
+    "level": "warn",
+    "message": "session validation slow cache miss",
+    "fields": {
+      "k": "session-cache",
+      "hit": false,
+      "ms": 640
+    }
+  },
+  {
+    "id": "log-019",
+    "serviceId": "auth-api",
+    "incidentId": "INC-2390",
+    "timestamp": "2026-09-24T13:20:58.000Z",
+    "level": "warn",
+    "message": "session validation slow cache miss",
+    "fields": {
+      "k": "session-cache",
+      "hit": false,
+      "ms": 711
+    }
+  },
+  {
+    "id": "log-020",
+    "serviceId": "auth-api",
+    "incidentId": "INC-2390",
+    "timestamp": "2026-09-24T13:40:12.000Z",
+    "level": "info",
+    "message": "cache warmed by m.silva",
+    "fields": {
+      "action": "warm"
+    }
+  },
+  {
+    "id": "log-021",
+    "serviceId": "catalog-api",
+    "incidentId": "INC-2389",
+    "timestamp": "2026-09-24T12:05:20.000Z",
+    "level": "warn",
+    "message": "search p95 degraded",
+    "fields": {
+      "p95": 840
+    }
+  },
+  {
+    "id": "log-022",
+    "serviceId": "search-indexer",
+    "incidentId": "INC-2388",
+    "timestamp": "2026-09-24T09:30:00.000Z",
+    "level": "warn",
+    "message": "consumer lag growing",
+    "fields": {
+      "lag": 12000,
+      "partition": 4
+    }
+  },
+  {
+    "id": "log-023",
+    "serviceId": "search-indexer",
+    "incidentId": "INC-2388",
+    "timestamp": "2026-09-24T09:55:00.000Z",
+    "level": "info",
+    "message": "partitions rebalanced",
+    "fields": {
+      "group": "search-indexer"
+    }
+  },
+  {
+    "id": "log-024",
+    "serviceId": "api-gateway",
+    "timestamp": "2026-09-24T14:05:55.000Z",
+    "level": "info",
+    "message": "route error rate rising for /checkout",
+    "fields": {
+      "route": "/checkout",
+      "pct": 3.1
+    }
+  },
+  {
+    "id": "log-025",
+    "serviceId": "postgres-primary",
+    "timestamp": "2026-09-24T14:06:10.000Z",
+    "level": "info",
+    "message": "latency stable p95=190ms",
+    "fields": {
+      "p95": 190,
+      "cpu": 41
+    }
+  },
+  {
+    "id": "log-026",
+    "serviceId": "redis-cache",
+    "timestamp": "2026-09-24T14:06:10.000Z",
+    "level": "info",
+    "message": "hits healthy 99.1%",
+    "fields": {
+      "hit_rate": 99.1
+    }
+  }
+]

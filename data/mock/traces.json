@@ -1,0 +1,148 @@
+[
+  {
+    "traceId": "t-9c2f1a",
+    "incidentId": "INC-2391",
+    "serviceId": "payment-api",
+    "name": "POST /checkout",
+    "operation": "/checkout",
+    "startedAt": "2026-09-24T14:06:12.000Z",
+    "durationMs": 1423,
+    "status": "error",
+    "spans": [
+      {
+        "spanId": "sp-root",
+        "name": "serve /checkout",
+        "service": "api-gateway",
+        "operation": "http",
+        "startedAt": "2026-09-24T14:06:12.000Z",
+        "durationMs": 1423,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-pay",
+        "parentSpanId": "sp-root",
+        "name": "process checkout",
+        "service": "payment-api",
+        "operation": "checkout.process",
+        "startedAt": "2026-09-24T14:06:12.000Z",
+        "durationMs": 1390,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-auth",
+        "parentSpanId": "sp-pay",
+        "name": "authorize payment",
+        "service": "payment-api",
+        "operation": "payment.authorize",
+        "startedAt": "2026-09-24T14:06:12.000Z",
+        "durationMs": 1290,
+        "status": "error",
+        "error": "psycopg2.OperationalError: connection reset"
+      },
+      {
+        "spanId": "sp-db",
+        "parentSpanId": "sp-auth",
+        "name": "commit transaction",
+        "service": "postgres-primary",
+        "operation": "sql.transaction",
+        "startedAt": "2026-09-24T14:06:12.000Z",
+        "durationMs": 1280,
+        "status": "error",
+        "error": "read from connection before ready"
+      }
+    ]
+  },
+  {
+    "traceId": "t-7b3d0e",
+    "incidentId": "INC-2391",
+    "serviceId": "payment-api",
+    "name": "POST /checkout",
+    "operation": "/checkout",
+    "startedAt": "2026-09-24T14:06:49.000Z",
+    "durationMs": 1187,
+    "status": "error",
+    "spans": [
+      {
+        "spanId": "sp-root2",
+        "name": "serve /checkout",
+        "service": "api-gateway",
+        "operation": "http",
+        "startedAt": "2026-09-24T14:06:49.000Z",
+        "durationMs": 1187,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-pay2",
+        "parentSpanId": "sp-root2",
+        "name": "process checkout",
+        "service": "payment-api",
+        "operation": "checkout.process",
+        "startedAt": "2026-09-24T14:06:49.000Z",
+        "durationMs": 1155,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-auth2",
+        "parentSpanId": "sp-pay2",
+        "name": "authorize payment",
+        "service": "payment-api",
+        "operation": "payment.authorize",
+        "startedAt": "2026-09-24T14:06:49.000Z",
+        "durationMs": 1090,
+        "status": "error",
+        "error": "psycopg2.OperationalError: connection reset"
+      },
+      {
+        "spanId": "sp-db2",
+        "parentSpanId": "sp-auth2",
+        "name": "commit transaction",
+        "service": "postgres-primary",
+        "operation": "sql.transaction",
+        "startedAt": "2026-09-24T14:06:49.000Z",
+        "durationMs": 1075,
+        "status": "error",
+        "error": "server closed the connection unexpectedly"
+      }
+    ]
+  },
+  {
+    "traceId": "t-880f1b",
+    "serviceId": "checkout-api",
+    "name": "POST /checkout",
+    "operation": "/checkout",
+    "startedAt": "2026-09-24T13:58:22.000Z",
+    "durationMs": 312,
+    "status": "ok",
+    "spans": [
+      {
+        "spanId": "sp-o1",
+        "name": "serve /checkout",
+        "service": "api-gateway",
+        "operation": "http",
+        "startedAt": "2026-09-24T13:58:22.000Z",
+        "durationMs": 312,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-o2",
+        "parentSpanId": "sp-o1",
+        "name": "process checkout",
+        "service": "checkout-api",
+        "operation": "checkout.process",
+        "startedAt": "2026-09-24T13:58:22.000Z",
+        "durationMs": 210,
+        "status": "ok"
+      },
+      {
+        "spanId": "sp-o3",
+        "parentSpanId": "sp-o2",
+        "name": "authorize payment",
+        "service": "payment-api",
+        "operation": "payment.authorize",
+        "startedAt": "2026-09-24T13:58:22.000Z",
+        "durationMs": 180,
+        "status": "ok"
+      }
+    ]
+  }
+]

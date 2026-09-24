@@ -1,0 +1,68 @@
+[
+  {
+    "id": "dep-pay-281",
+    "serviceId": "payment-api",
+    "version": "v2.8.1",
+    "startedAt": "2026-09-24T14:01:58.000Z",
+    "finishedAt": "2026-09-24T14:02:10.000Z",
+    "status": "deployed",
+    "author": "J. Chen",
+    "commit": "a1b2c3d",
+    "description": "Increase checkout retry backoff + cache checkout session across replicas."
+  },
+  {
+    "id": "dep-pay-280",
+    "serviceId": "payment-api",
+    "version": "v2.8.0",
+    "startedAt": "2026-09-24T13:55:02.000Z",
+    "finishedAt": "2026-09-24T13:55:40.000Z",
+    "status": "deployed",
+    "author": "J. Chen",
+    "commit": "f41e7aa",
+    "description": "Add authorize step correlation ids for tracing."
+  },
+  {
+    "id": "dep-auth-114",
+    "serviceId": "auth-api",
+    "version": "v3.4.0",
+    "startedAt": "2026-09-24T11:30:00.000Z",
+    "finishedAt": "2026-09-24T11:30:55.000Z",
+    "status": "deployed",
+    "author": "T. Nunes",
+    "commit": "0c9d3f1",
+    "description": "Session token rotation policy update."
+  },
+  {
+    "id": "dep-cat-90",
+    "serviceId": "catalog-api",
+    "version": "v4.2.0",
+    "startedAt": "2026-09-24T10:15:00.000Z",
+    "finishedAt": "2026-09-24T10:15:32.000Z",
+    "status": "deployed",
+    "author": "A. Kumar",
+    "commit": "7b2cc99",
+    "description": "Search relevance tuning and facet caching."
+  },
+  {
+    "id": "dep-fw-57",
+    "serviceId": "frontend-web",
+    "version": "v6.1.0",
+    "startedAt": "2026-09-24T09:40:00.000Z",
+    "finishedAt": "2026-09-24T09:40:25.000Z",
+    "status": "deployed",
+    "author": "P. Rossi",
+    "commit": "3aa1db4",
+    "description": "Checkout entry point redesign (A/B rollout 50%)."
+  },
+  {
+    "id": "dep-chk-19",
+    "serviceId": "checkout-api",
+    "version": "v1.9.2",
+    "startedAt": "2026-09-24T08:05:00.000Z",
+    "finishedAt": "2026-09-24T08:05:18.000Z",
+    "status": "deployed",
+    "author": "S. Kim",
+    "commit": "d99e00c",
+    "description": "Order confirmation event schema bump."
+  }
+]

@@ -1,0 +1,212 @@
+[
+  {
+    "id": "INC-2391",
+    "title": "Payment API returning HTTP 500",
+    "description": "The Payment API is experiencing an increase in HTTP 500 responses, affecting the /checkout flow. Onset began minutes after deployment v2.8.1.",
+    "severity": "P1",
+    "status": "INVESTIGATING",
+    "serviceId": "payment-api",
+    "assignee": "L. Chen",
+    "startedAt": "2026-09-24T14:06:00.000Z",
+    "detectedAt": "2026-09-24T14:08:00.000Z",
+    "impact": "~12% of payment requests failing and checkout latency up to 4x. Checkout flow partially degraded.",
+    "summary": "HTTP 500 spike on Payment API detected 4 minutes after deployment v2.8.1. Authorize-payment step is the primary failing operation.",
+    "timeline": [
+      {
+        "time": "2026-09-24T14:02:00.000Z",
+        "type": "deployment",
+        "title": "Deployment v2.8.1",
+        "detail": "payment-api v2.8.1 released by J. Chen (commit a1b2c3d)."
+      },
+      {
+        "time": "2026-09-24T14:05:00.000Z",
+        "type": "metric",
+        "title": "Latency begins increasing",
+        "detail": "payment-api p50 latency rising from ~90ms toward 190ms."
+      },
+      {
+        "time": "2026-09-24T14:06:00.000Z",
+        "type": "metric",
+        "title": "HTTP 500 spike detected",
+        "detail": "Error rate jumps +38%; /checkout is the most affected endpoint."
+      },
+      {
+        "time": "2026-09-24T14:08:00.000Z",
+        "type": "incident",
+        "title": "Incident created",
+        "detail": "Rootline detected the anomaly and opened INC-2391 (P1)."
+      },
+      {
+        "time": "2026-09-24T14:10:00.000Z",
+        "type": "investigation",
+        "title": "Investigation started",
+        "detail": "Correlation engine linked deployment v2.8.1 + error rate + /checkout."
+      },
+      {
+        "time": "2026-09-24T14:11:00.000Z",
+        "type": "investigation",
+        "title": "AI hypothesis generated",
+        "detail": "Strongest correlation: recent deployment to payment-api (82% confidence)."
+      },
+      {
+        "time": "2026-09-24T14:12:00.000Z",
+        "type": "action",
+        "title": "Engineer reviewing evidence",
+        "detail": "L. Chen inspecting deployment diff and affected endpoint traces."
+      }
+    ],
+    "affectedServices": [
+      {
+        "serviceId": "payment-api",
+        "impact": "HTTP 500 spike, high latency"
+      },
+      {
+        "serviceId": "checkout-api",
+        "impact": "Elevated latency due to payment dependency"
+      }
+    ]
+  },
+  {
+    "id": "INC-2390",
+    "title": "Auth API increased latency",
+    "description": "Session validation calls on Auth API are ~2.5x slower than baseline, increasing login and token refresh times.",
+    "severity": "P2",
+    "status": "MONITORING",
+    "serviceId": "auth-api",
+    "assignee": "M. Silva",
+    "startedAt": "2026-09-24T13:20:00.000Z",
+    "detectedAt": "2026-09-24T13:22:00.000Z",
+    "impact": "Login and token refresh slower for a subset of users.",
+    "summary": "Latency degradation on auth-api, currently being monitored after mitigation.",
+    "timeline": [
+      {
+        "time": "2026-09-24T13:20:00.000Z",
+        "type": "metric",
+        "title": "Latency degradation",
+        "detail": "auth-api p95 crossing 700ms."
+      },
+      {
+        "time": "2026-09-24T13:22:00.000Z",
+        "type": "incident",
+        "title": "Incident created",
+        "detail": "INC-2390 opened as P2."
+      },
+      {
+        "time": "2026-09-24T13:25:00.000Z",
+        "type": "investigation",
+        "title": "Investigation started",
+        "detail": "Correlated with Redis cache miss rate increase."
+      },
+      {
+        "time": "2026-09-24T13:40:00.000Z",
+        "type": "action",
+        "title": "Cache warming",
+        "detail": "M. Silva warmed session cache; latency stabilized."
+      },
+      {
+        "time": "2026-09-24T13:48:00.000Z",
+        "type": "system",
+        "title": "Monitoring",
+        "detail": "Incident moved to MONITORING."
+      }
+    ],
+    "affectedServices": [
+      {
+        "serviceId": "auth-api",
+        "impact": "Elevated latency (p95 ~780ms)"
+      }
+    ]
+  },
+  {
+    "id": "INC-2389",
+    "title": "Catalog search degradation",
+    "description": "Product search under degraded performance returning partial results during index refresh.",
+    "severity": "P3",
+    "status": "MITIGATING",
+    "serviceId": "catalog-api",
+    "assignee": "A. Kumar",
+    "startedAt": "2026-09-24T12:05:00.000Z",
+    "detectedAt": "2026-09-24T12:07:00.000Z",
+    "impact": "Search slow for a fraction of catalog traffic.",
+    "summary": "Partial search results while the index is refreshed. Mitigation in progress.",
+    "timeline": [
+      {
+        "time": "2026-09-24T12:05:00.000Z",
+        "type": "metric",
+        "title": "Search degradation",
+        "detail": "Catalog search p95 > 800ms."
+      },
+      {
+        "time": "2026-09-24T12:07:00.000Z",
+        "type": "incident",
+        "title": "Incident created",
+        "detail": "INC-2389 opened as P3."
+      },
+      {
+        "time": "2026-09-24T12:30:00.000Z",
+        "type": "action",
+        "title": "Index rebuild",
+        "detail": "A. Kumar triggered full index rebuild."
+      }
+    ],
+    "affectedServices": [
+      {
+        "serviceId": "catalog-api",
+        "impact": "Degraded search"
+      }
+    ]
+  },
+  {
+    "id": "INC-2388",
+    "title": "Search index lag",
+    "description": "Search indexer fell behind on event consumption, causing stale products in search for ~40 minutes.",
+    "severity": "P4",
+    "status": "RESOLVED",
+    "serviceId": "search-indexer",
+    "assignee": "J. Oliveira",
+    "startedAt": "2026-09-24T09:30:00.000Z",
+    "detectedAt": "2026-09-24T09:44:00.000Z",
+    "resolvedAt": "2026-09-24T10:12:00.000Z",
+    "impact": "Low impact — search results stale for a short window.",
+    "summary": "Consumer lag on search indexer resolved by rebalancing partitions.",
+    "timeline": [
+      {
+        "time": "2026-09-24T09:30:00.000Z",
+        "type": "system",
+        "title": "Consumer lag",
+        "detail": "search-indexer lag growing on kafka-bus."
+      },
+      {
+        "time": "2026-09-24T09:44:00.000Z",
+        "type": "incident",
+        "title": "Incident created",
+        "detail": "INC-2388 opened as P4."
+      },
+      {
+        "time": "2026-09-24T09:55:00.000Z",
+        "type": "action",
+        "title": "Partitions rebalanced",
+        "detail": "J. Oliveira rebalanced consumer group."
+      },
+      {
+        "time": "2026-09-24T10:12:00.000Z",
+        "type": "resolution",
+        "title": "Incident resolved",
+        "detail": "Lag back to zero; search healthy."
+      }
+    ],
+    "affectedServices": [
+      {
+        "serviceId": "search-indexer",
+        "impact": "Stale search index"
+      }
+    ],
+    "resolution": {
+      "rootCause": "Consumer group imbalance on the search indexer",
+      "summary": "Rebalanced partitions; lag recovered to 0.",
+      "resolvedBy": "J. Oliveira",
+      "resolvedAt": "2026-09-24T10:12:00.000Z",
+      "mitigation": "Added alert for consumer lag threshold."
+    }
+  }
+]

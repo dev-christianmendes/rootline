@@ -1,0 +1,181 @@
+[
+  {
+    "id": "frontend-web",
+    "name": "Frontend Web",
+    "description": "Web application served to end users (Next.js).",
+    "kind": "frontend",
+    "team": "Platform",
+    "version": "v6.1.0",
+    "health": "healthy",
+    "latencyMs": 62,
+    "errorRate": 0.06,
+    "availability": 99.99,
+    "p95LatencyMs": 160,
+    "dependencies": [
+      "api-gateway"
+    ]
+  },
+  {
+    "id": "api-gateway",
+    "name": "API Gateway",
+    "description": "Edge gateway routing traffic to backend APIs.",
+    "kind": "gateway",
+    "team": "Platform",
+    "version": "v2.3.1",
+    "health": "healthy",
+    "latencyMs": 84,
+    "errorRate": 0.12,
+    "availability": 99.99,
+    "p95LatencyMs": 210,
+    "dependencies": [
+      "auth-api",
+      "payment-api",
+      "catalog-api",
+      "checkout-api"
+    ]
+  },
+  {
+    "id": "auth-api",
+    "name": "Auth API",
+    "description": "Authentication and session management.",
+    "kind": "api",
+    "team": "Identity",
+    "version": "v3.4.0",
+    "health": "degraded",
+    "latencyMs": 312,
+    "errorRate": 1.4,
+    "availability": 99.82,
+    "p95LatencyMs": 780,
+    "dependencies": [
+      "redis-cache",
+      "postgres-primary"
+    ]
+  },
+  {
+    "id": "payment-api",
+    "name": "Payment API",
+    "description": "Payment processing, checkout and refunds.",
+    "kind": "api",
+    "team": "Payments",
+    "version": "v2.8.1",
+    "health": "critical",
+    "latencyMs": 483,
+    "errorRate": 3.8,
+    "availability": 99.41,
+    "p95LatencyMs": 1240,
+    "dependencies": [
+      "postgres-primary",
+      "redis-cache",
+      "kafka-bus"
+    ]
+  },
+  {
+    "id": "catalog-api",
+    "name": "Catalog API",
+    "description": "Product catalog and search.",
+    "kind": "api",
+    "team": "Commerce",
+    "version": "v4.2.0",
+    "health": "healthy",
+    "latencyMs": 96,
+    "errorRate": 0.18,
+    "availability": 99.95,
+    "p95LatencyMs": 240,
+    "dependencies": [
+      "postgres-primary",
+      "redis-cache"
+    ]
+  },
+  {
+    "id": "checkout-api",
+    "name": "Checkout API",
+    "description": "Checkout orchestration and order creation.",
+    "kind": "api",
+    "team": "Commerce",
+    "version": "v1.9.2",
+    "health": "degraded",
+    "latencyMs": 268,
+    "errorRate": 1.1,
+    "availability": 99.71,
+    "p95LatencyMs": 640,
+    "dependencies": [
+      "payment-api",
+      "postgres-primary"
+    ]
+  },
+  {
+    "id": "notification-worker",
+    "name": "Notification Worker",
+    "description": "Async email and push notification delivery.",
+    "kind": "worker",
+    "team": "Engagement",
+    "version": "v2.1.3",
+    "health": "healthy",
+    "latencyMs": 45,
+    "errorRate": 0.04,
+    "availability": 99.98,
+    "p95LatencyMs": 130,
+    "dependencies": [
+      "kafka-bus",
+      "postgres-primary"
+    ]
+  },
+  {
+    "id": "search-indexer",
+    "name": "Search Indexer",
+    "description": "Consumes events to build and refresh the product search index.",
+    "kind": "worker",
+    "team": "Commerce",
+    "version": "v1.4.1",
+    "health": "healthy",
+    "latencyMs": 38,
+    "errorRate": 0.06,
+    "availability": 99.92,
+    "p95LatencyMs": 120,
+    "dependencies": [
+      "kafka-bus"
+    ]
+  },
+  {
+    "id": "postgres-primary",
+    "name": "PostgreSQL",
+    "description": "Primary relational database (OLTP).",
+    "kind": "data",
+    "team": "Data Infrastructure",
+    "version": "16.3",
+    "health": "healthy",
+    "latencyMs": 88,
+    "errorRate": 0,
+    "availability": 99.99,
+    "p95LatencyMs": 190,
+    "dependencies": []
+  },
+  {
+    "id": "redis-cache",
+    "name": "Redis",
+    "description": "Distributed cache and ephemeral state.",
+    "kind": "cache",
+    "team": "Data Infrastructure",
+    "version": "7.2",
+    "health": "healthy",
+    "latencyMs": 12,
+    "errorRate": 0,
+    "availability": 99.99,
+    "p95LatencyMs": 30,
+    "dependencies": []
+  },
+  {
+    "id": "kafka-bus",
+    "name": "Kafka",
+    "description": "Event bus for asynchronous workflows.",
+    "kind": "message_bus",
+    "team": "Data Infrastructure",
+    "version": "3.7",
+    "health": "healthy",
+    "latencyMs": 18,
+    "errorRate": 0.01,
+    "availability": 99.97,
+    "p95LatencyMs": 60,
+    "dependencies": []
+  }
+]
