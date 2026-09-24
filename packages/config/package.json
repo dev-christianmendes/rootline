@@ -1,0 +1,12 @@
+{
+  "name": "@rootline/config",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "*.json"
+  ],
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.next.json": "./tsconfig.next.json"
+  }
+}
