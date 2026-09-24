@@ -1,0 +1,17 @@
+{
+  "extends": "@rootline/config/tsconfig.next.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "../../data/mock/**/*.json"
+  ],
+  "exclude": ["node_modules"]
+}
