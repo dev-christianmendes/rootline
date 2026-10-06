@@ -135,3 +135,14 @@ ROOTLINE_TEST_DATABASE_URL="postgresql+psycopg://rootline:rootline@localhost:543
 - **Não implementado:** autenticação, migrações de schema (a API usa
   `create_all` + seed) e a análise de incidentes recém-criados, que ainda
   depende de uma investigação pré-existente.
+
+## Documentação
+
+- [Architecture Decision Records (ADRs)](docs/adr/)
+- [Architecture Diagrams](docs/architecture/)
+- [Runbooks](docs/runbooks/)
+- [Contributing Guide](docs/CONTRIBUTING.md)
+
+## Licença
+
+MIT License - veja [LICENSE](LICENSE) para detalhes.
