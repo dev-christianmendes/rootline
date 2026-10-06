@@ -3,6 +3,14 @@ from __future__ import annotations
 API = "/api/v1"
 
 
+def get_items(response) -> list:
+    """Extract items from paginated response."""
+    data = response.json()
+    if isinstance(data, dict) and "items" in data:
+        return data["items"]
+    return data
+
+
 def test_health_reports_ok(client):
     response = client.get(f"{API}/health")
     assert response.status_code == 200
@@ -16,7 +24,7 @@ def test_system_health_aggregates_services(client):
     response = client.get(f"{API}/system/health")
     assert response.status_code == 200
     body = response.json()
-    services = client.get(f"{API}/services").json()
+    services = get_items(client.get(f"{API}/services"))
 
     assert body["serviceCount"] == len(services)
     assert body["activeIncidents"] >= 1
@@ -25,7 +33,7 @@ def test_system_health_aggregates_services(client):
 
 
 def test_services_are_listed_in_curated_order(client):
-    services = client.get(f"{API}/services").json()
+    services = get_items(client.get(f"{API}/services"))
     assert len(services) == 11
     assert [s["id"] for s in services][0] == "frontend-web"
     for service in services:
@@ -46,7 +54,7 @@ def test_services_are_listed_in_curated_order(client):
 
 
 def test_every_service_exposes_metrics(client):
-    services = client.get(f"{API}/services").json()
+    services = get_items(client.get(f"{API}/services"))
     for service in services:
         response = client.get(f"{API}/services/{service['id']}/metrics")
         assert response.status_code == 200, service["id"]

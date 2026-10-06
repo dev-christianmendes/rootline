@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 
@@ -333,3 +333,27 @@ class InvestigationOut(Domain):
     incident_id: str = Field(alias="incidentId")
     generated_at: IsoDatetime = Field(alias="generatedAt")
     hypotheses: list[HypothesisOut]
+
+
+# --------------------------------------------------------------------------
+# Pagination
+# --------------------------------------------------------------------------
+
+T = TypeVar("T")
+
+
+class PageParams(BaseModel):
+    """Query parameters for paginated list endpoints."""
+
+    offset: int = Field(default=0, ge=0, description="Number of items to skip")
+    limit: int = Field(default=50, ge=1, le=200, description="Maximum items to return")
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """Paginated response wrapper."""
+
+    items: list[T]
+    total: int
+    offset: int
+    limit: int
+    has_more: bool

@@ -3,14 +3,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_active_user
 from app.db import get_db
 from app.models import Incident, LogEntry, Service, Trace, User as UserModel
 from app.rate_limiter import rate_limit, INCIDENT_CREATE_RATE_LIMIT, INCIDENT_PATCH_RATE_LIMIT
-from app.schemas import IncidentCreate, IncidentOut, IncidentPatch, LogEntryOut, TraceOut
+from app.schemas import IncidentCreate, IncidentOut, IncidentPatch, LogEntryOut, TraceOut, PageParams, PaginatedResponse
 
 router = APIRouter(tags=["incidents"])
 
@@ -41,9 +41,22 @@ def get_incident_or_404(incident_id: str, db: Session) -> Incident:
     return incident
 
 
-@router.get("/incidents", response_model=list[IncidentOut], response_model_by_alias=True)
-def list_incidents(db: Session = Depends(get_db)) -> list[Incident]:
-    return list(db.scalars(select(Incident).order_by(Incident.started_at.desc(), Incident.id)))
+@router.get("/incidents", response_model=PaginatedResponse[IncidentOut], response_model_by_alias=True)
+def list_incidents(params: PageParams = Depends(), db: Session = Depends(get_db)) -> PaginatedResponse[IncidentOut]:
+    total = db.scalar(select(func.count()).select_from(Incident))
+    items = list(db.scalars(
+        select(Incident)
+        .order_by(Incident.started_at.desc(), Incident.id)
+        .offset(params.offset)
+        .limit(params.limit)
+    ))
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        offset=params.offset,
+        limit=params.limit,
+        has_more=params.offset + params.limit < total,
+    )
 
 
 @router.get(

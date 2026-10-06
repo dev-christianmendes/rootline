@@ -3,8 +3,16 @@ from __future__ import annotations
 API = "/api/v1"
 
 
+def get_items(response) -> list:
+    """Extract items from paginated response."""
+    data = response.json()
+    if isinstance(data, dict) and "items" in data:
+        return data["items"]
+    return data
+
+
 def test_incidents_are_listed_newest_first(client):
-    incidents = client.get(f"{API}/incidents").json()
+    incidents = get_items(client.get(f"{API}/incidents"))
     assert len(incidents) == 4
     started = [i["startedAt"] for i in incidents]
     assert started == sorted(started, reverse=True)
@@ -43,7 +51,7 @@ def test_incident_logs_and_traces_are_scoped(client):
 def test_every_incident_has_telemetry(client):
     """The incident detail page renders logs and traces tabs; empty ones would
     be a dead end."""
-    for incident in client.get(f"{API}/incidents").json():
+    for incident in get_items(client.get(f"{API}/incidents")):
         incident_id = incident["id"]
         assert client.get(f"{API}/incidents/{incident_id}/logs").json(), incident_id
         assert client.get(f"{API}/incidents/{incident_id}/traces").json(), incident_id
@@ -56,7 +64,7 @@ def test_create_incident_requires_title(client, auth_headers):
 
 
 def test_create_incident_persists_and_is_retrievable(client, auth_headers):
-    before = len(client.get(f"{API}/incidents").json())
+    before = len(get_items(client.get(f"{API}/incidents")))
     response = client.post(
         f"{API}/incidents",
         json={
@@ -77,7 +85,7 @@ def test_create_incident_persists_and_is_retrievable(client, auth_headers):
     assert created["timeline"][0]["type"] == "incident"
     assert created["detectedAt"].endswith("Z")
 
-    assert len(client.get(f"{API}/incidents").json()) == before + 1
+    assert len(get_items(client.get(f"{API}/incidents"))) == before + 1
     assert client.get(f"{API}/incidents/{created['id']}").status_code == 200
 
 

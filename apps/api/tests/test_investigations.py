@@ -3,15 +3,23 @@ from __future__ import annotations
 API = "/api/v1"
 
 
+def get_items(response) -> list:
+    """Extract items from paginated response."""
+    data = response.json()
+    if isinstance(data, dict) and "items" in data:
+        return data["items"]
+    return data
+
+
 def test_investigations_are_listed_newest_first(client):
-    investigations = client.get(f"{API}/investigations").json()
+    investigations = get_items(client.get(f"{API}/investigations"))
     assert len(investigations) == 4
     generated = [i["generatedAt"] for i in investigations]
     assert generated == sorted(generated, reverse=True)
 
 
 def test_investigations_can_be_filtered_by_incident(client):
-    filtered = client.get(f"{API}/investigations?incidentId=INC-2389").json()
+    filtered = get_items(client.get(f"{API}/investigations?incidentId=INC-2389"))
     assert len(filtered) == 1
     assert filtered[0]["incidentId"] == "INC-2389"
 
@@ -45,7 +53,7 @@ def test_hypothesis_payload_shape(client):
 def test_every_incident_can_be_analyzed(client, auth_headers):
     """"Run analysis" 404s when an incident has no investigation, which hid the
     investigation link on the incident detail page."""
-    for incident in client.get(f"{API}/incidents").json():
+    for incident in get_items(client.get(f"{API}/incidents")):
         incident_id = incident["id"]
         response = client.post(f"{API}/incidents/{incident_id}/analyze", headers=auth_headers)
         assert response.status_code == 200, incident_id
@@ -60,9 +68,9 @@ def test_analyze_unknown_incident_returns_404(client, auth_headers):
 
 
 def test_deployments_are_listed(client):
-    deployments = client.get(f"{API}/deployments").json()
+    deployments = get_items(client.get(f"{API}/deployments"))
     assert len(deployments) == 6
-    services = {s["id"] for s in client.get(f"{API}/services").json()}
+    services = {s["id"] for s in get_items(client.get(f"{API}/services"))}
     for deployment in deployments:
         assert deployment["serviceId"] in services
         assert deployment["startedAt"].endswith("Z")

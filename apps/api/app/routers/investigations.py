@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_active_user
@@ -11,7 +11,7 @@ from app.config import get_settings
 from app.db import get_db
 from app.models import Incident, Investigation, User as UserModel
 from app.rate_limiter import rate_limit, ANALYZE_RATE_LIMIT
-from app.schemas import InvestigationOut
+from app.schemas import InvestigationOut, PageParams, PaginatedResponse
 from app.services.analysis import generate_investigation_for_incident
 
 router = APIRouter(tags=["investigations"])
@@ -19,18 +19,27 @@ router = APIRouter(tags=["investigations"])
 
 @router.get(
     "/investigations",
-    response_model=list[InvestigationOut],
+    response_model=PaginatedResponse[InvestigationOut],
     response_model_by_alias=True,
 )
 def list_investigations(
     incident_id: str | None = Query(default=None, alias="incidentId"),
+    params: PageParams = Depends(),
     db: Session = Depends(get_db),
-) -> list[Investigation]:
+) -> PaginatedResponse[InvestigationOut]:
     stmt = select(Investigation)
     if incident_id:
         stmt = stmt.where(Investigation.incident_id == incident_id)
     stmt = stmt.order_by(Investigation.generated_at.desc(), Investigation.id)
-    return list(db.scalars(stmt))
+    total = db.scalar(select(func.count()).select_from(stmt.subquery()))
+    items = list(db.scalars(stmt.offset(params.offset).limit(params.limit)))
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        offset=params.offset,
+        limit=params.limit,
+        has_more=params.offset + params.limit < total,
+    )
 
 
 @router.get(

@@ -1,19 +1,32 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import MetricPoint, Service
-from app.schemas import MetricPointOut, MetricSeriesOut, ServiceOut
+from app.schemas import MetricPointOut, MetricSeriesOut, ServiceOut, PageParams, PaginatedResponse
 
 router = APIRouter(tags=["services"])
 
 
-@router.get("/services", response_model=list[ServiceOut], response_model_by_alias=True)
-def list_services(db: Session = Depends(get_db)) -> list[Service]:
-    return list(db.scalars(select(Service).order_by(Service.position, Service.id)))
+@router.get("/services", response_model=PaginatedResponse[ServiceOut], response_model_by_alias=True)
+def list_services(params: PageParams = Depends(), db: Session = Depends(get_db)) -> PaginatedResponse[ServiceOut]:
+    total = db.scalar(select(func.count()).select_from(Service))
+    items = list(db.scalars(
+        select(Service)
+        .order_by(Service.position, Service.id)
+        .offset(params.offset)
+        .limit(params.limit)
+    ))
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        offset=params.offset,
+        limit=params.limit,
+        has_more=params.offset + params.limit < total,
+    )
 
 
 @router.get(
