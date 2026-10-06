@@ -15,6 +15,8 @@ from app.routers import deployments, health, incidents, investigations, services
 from app.websockets.router import router as websockets_router
 from app.seed import seed
 from app.rate_limiter import add_rate_limiter
+from app.observability import setup_metrics, RequestIdMiddleware, MetricsMiddleware
+from app.health_checks import router as health_checks_router
 
 logger = logging.getLogger("rootline.api")
 
@@ -69,6 +71,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Add observability middleware
+    application.add_middleware(RequestIdMiddleware)
+    application.add_middleware(MetricsMiddleware)
+
     # Add rate limiter
     add_rate_limiter(application)
 
@@ -80,6 +86,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Setup metrics endpoint
+    setup_metrics(application)
+
     application.include_router(auth_router, prefix=API_PREFIX)
     application.include_router(health.router, prefix=API_PREFIX)
     application.include_router(system.router, prefix=API_PREFIX)
@@ -88,6 +97,7 @@ def create_app() -> FastAPI:
     application.include_router(investigations.router, prefix=API_PREFIX)
     application.include_router(deployments.router, prefix=API_PREFIX)
     application.include_router(websockets_router, prefix=API_PREFIX)
+    application.include_router(health_checks_router, prefix=API_PREFIX)
 
     return application
 
