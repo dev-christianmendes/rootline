@@ -4,6 +4,7 @@ import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@rootline/ui";
 import { Toaster } from "sonner";
+import { WebSocketProvider } from "@/context/websocket-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = React.useState(
@@ -22,7 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <TooltipProvider delayDuration={200}>
-        {children}
+        <WebSocketProvider>{children}</WebSocketProvider>
         <Toaster theme="dark" position="bottom-right" richColors closeButton />
       </TooltipProvider>
     </QueryClientProvider>

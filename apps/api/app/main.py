@@ -12,6 +12,7 @@ from app.config import get_settings
 from app.db import Base, SessionLocal, engine
 from app.auth import auth_router
 from app.routers import deployments, health, incidents, investigations, services, system
+from app.websockets.router import router as websockets_router
 from app.seed import seed
 from app.rate_limiter import add_rate_limiter
 
@@ -86,6 +87,7 @@ def create_app() -> FastAPI:
     application.include_router(incidents.router, prefix=API_PREFIX)
     application.include_router(investigations.router, prefix=API_PREFIX)
     application.include_router(deployments.router, prefix=API_PREFIX)
+    application.include_router(websockets_router, prefix=API_PREFIX)
 
     return application
 
