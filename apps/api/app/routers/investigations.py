@@ -12,6 +12,7 @@ from app.db import get_db
 from app.models import Incident, Investigation, User as UserModel
 from app.rate_limiter import rate_limit, ANALYZE_RATE_LIMIT
 from app.schemas import InvestigationOut
+from app.services.analysis import generate_investigation_for_incident
 
 router = APIRouter(tags=["investigations"])
 
@@ -53,7 +54,7 @@ def get_investigation(
     response_model_by_alias=True,
     responses={
         404: {
-            "description": "Incident not found, or no analysis available for it"
+            "description": "Incident not found"
         }
     },
     dependencies=[rate_limit(ANALYZE_RATE_LIMIT)],
@@ -70,9 +71,7 @@ async def analyze_incident(
     if settings.analysis_delay_ms > 0:
         await asyncio.sleep(settings.analysis_delay_ms / 1000)
 
-    investigation = db.scalar(
-        select(Investigation).where(Investigation.incident_id == incident_id)
-    )
+    investigation = generate_investigation_for_incident(db, incident_id)
     if investigation is None:
         raise HTTPException(
             status_code=404, detail="No analysis available for this incident"
