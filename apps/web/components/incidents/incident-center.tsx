@@ -29,6 +29,7 @@ import {
 } from "@/components/common/states";
 import { useServiceNames } from "@/features/services/use-services";
 import { NewIncidentDialog } from "./new-incident-dialog";
+import { useIncidentWebSocket } from "@/hooks/use-incident-websocket";
 
 const ALL_SEVERITIES: Severity[] = ["P1", "P2", "P3", "P4"];
 const ALL_STATUSES: IncidentStatus[] = [
@@ -47,6 +48,20 @@ export function IncidentCenter() {
   const [severities, setSeverities] = useState<Severity[]>([]);
   const [statuses, setStatuses] = useState<IncidentStatus[]>([]);
   const [creating, setCreating] = useState(false);
+
+  // Connect to WebSocket for the first incident in the list (or first active)
+  const firstActiveIncident = useMemo(() => {
+    return (incidents.data ?? []).find((i) => i.status !== "RESOLVED");
+  }, [incidents.data]);
+
+  const { isConnected: wsConnected } = useIncidentWebSocket({
+    incidentId: firstActiveIncident?.id ?? "",
+    enabled: !!firstActiveIncident,
+    onIncidentUpdate: () => {
+      // Update the local cache via react-query
+      incidents.refetch();
+    },
+  });
 
   const filtered = useMemo(() => {
     const list = incidents.data ?? [];
@@ -117,6 +132,27 @@ export function IncidentCenter() {
               label={st}
             />
           ))}
+          {/* WebSocket connection status indicator */}
+          <span
+            className={cn(
+              "flex items-center gap-1 text-xs px-2 py-1 rounded border",
+              wsConnected
+                ? "border-success/30 bg-success/10 text-success"
+                : "border-warning/30 bg-warning/10 text-warning",
+            )}
+          >
+            {wsConnected ? (
+              <>
+                <span className="size-1.5 rounded-full bg-success" />
+                Real-time
+              </>
+            ) : (
+              <>
+                <span className="size-1.5 rounded-full bg-warning animate-pulse" />
+                Conectando...
+              </>
+            )}
+          </span>
         </div>
       </div>
 
