@@ -6,6 +6,7 @@ import { TooltipProvider } from "@rootline/ui";
 import { Toaster } from "sonner";
 import { WebSocketProvider } from "@/context/websocket-context";
 import { LocaleProvider } from "@/context/locale-context";
+import { ErrorBoundary } from "@/components/common/error-boundary";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = React.useState(
@@ -25,7 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={client}>
       <TooltipProvider delayDuration={200}>
         <LocaleProvider>
-          <WebSocketProvider>{children}</WebSocketProvider>
+          <ErrorBoundary>
+            <WebSocketProvider>{children}</WebSocketProvider>
+          </ErrorBoundary>
         </LocaleProvider>
         <Toaster theme="dark" position="bottom-right" richColors closeButton />
       </TooltipProvider>
