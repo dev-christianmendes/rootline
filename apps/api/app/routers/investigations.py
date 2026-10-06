@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_active_user
 from app.config import get_settings
 from app.db import get_db
-from app.models import Incident, Investigation
+from app.models import Incident, Investigation, User as UserModel
 from app.schemas import InvestigationOut
 
 router = APIRouter(tags=["investigations"])
@@ -56,7 +57,9 @@ def get_investigation(
     },
 )
 async def analyze_incident(
-    incident_id: str, db: Session = Depends(get_db)
+    incident_id: str,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
 ) -> Investigation:
     if db.get(Incident, incident_id) is None:
         raise HTTPException(status_code=404, detail="Incident not found")

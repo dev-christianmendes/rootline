@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_active_user
 from app.db import get_db
-from app.models import Incident, LogEntry, Service, Trace
+from app.models import Incident, LogEntry, Service, Trace, User as UserModel
 from app.schemas import IncidentCreate, IncidentOut, IncidentPatch, LogEntryOut, TraceOut
 
 router = APIRouter(tags=["incidents"])
@@ -63,7 +64,11 @@ def get_incident(incident_id: str, db: Session = Depends(get_db)) -> Incident:
     status_code=status.HTTP_201_CREATED,
     responses={400: {"description": "Missing title"}},
 )
-def create_incident(payload: IncidentCreate, db: Session = Depends(get_db)) -> Incident:
+def create_incident(
+    payload: IncidentCreate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
+) -> Incident:
     if not payload.title or not payload.title.strip():
         raise HTTPException(status_code=400, detail="Field 'title' is required")
 
@@ -117,7 +122,10 @@ def create_incident(payload: IncidentCreate, db: Session = Depends(get_db)) -> I
     responses={404: {"description": "Incident not found"}},
 )
 def patch_incident(
-    incident_id: str, payload: IncidentPatch, db: Session = Depends(get_db)
+    incident_id: str,
+    payload: IncidentPatch,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
 ) -> Incident:
     incident = get_incident_or_404(incident_id, db)
     # by_alias keeps the stored resolution document in the same camelCase shape

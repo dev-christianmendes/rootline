@@ -49,13 +49,13 @@ def test_every_incident_has_telemetry(client):
         assert client.get(f"{API}/incidents/{incident_id}/traces").json(), incident_id
 
 
-def test_create_incident_requires_title(client):
-    response = client.post(f"{API}/incidents", json={})
+def test_create_incident_requires_title(client, auth_headers):
+    response = client.post(f"{API}/incidents", json={}, headers=auth_headers)
     assert response.status_code == 400
     assert response.json()["detail"] == "Field 'title' is required"
 
 
-def test_create_incident_persists_and_is_retrievable(client):
+def test_create_incident_persists_and_is_retrievable(client, auth_headers):
     before = len(client.get(f"{API}/incidents").json())
     response = client.post(
         f"{API}/incidents",
@@ -67,6 +67,7 @@ def test_create_incident_persists_and_is_retrievable(client):
             "assignee": "S. Kim",
             "impact": "Checkout blocked for some users.",
         },
+        headers=auth_headers,
     )
     assert response.status_code == 201
     created = response.json()
@@ -80,22 +81,22 @@ def test_create_incident_persists_and_is_retrievable(client):
     assert client.get(f"{API}/incidents/{created['id']}").status_code == 200
 
 
-def test_create_incident_generates_unique_sequential_ids(client):
-    first = client.post(f"{API}/incidents", json={"title": "One"}).json()
-    second = client.post(f"{API}/incidents", json={"title": "Two"}).json()
+def test_create_incident_generates_unique_sequential_ids(client, auth_headers):
+    first = client.post(f"{API}/incidents", json={"title": "One"}, headers=auth_headers).json()
+    second = client.post(f"{API}/incidents", json={"title": "Two"}, headers=auth_headers).json()
     assert first["id"] != second["id"]
     assert int(second["id"][4:]) == int(first["id"][4:]) + 1
 
 
-def test_create_incident_rejects_unknown_service(client):
+def test_create_incident_rejects_unknown_service(client, auth_headers):
     response = client.post(
-        f"{API}/incidents", json={"title": "X", "serviceId": "ghost-service"}
+        f"{API}/incidents", json={"title": "X", "serviceId": "ghost-service"}, headers=auth_headers
     )
     assert response.status_code == 400
     assert "ghost-service" in response.json()["detail"]
 
 
-def test_patch_resolves_incident_and_records_resolution(client):
+def test_patch_resolves_incident_and_records_resolution(client, auth_headers):
     response = client.patch(
         f"{API}/incidents/INC-2390",
         json={
@@ -107,6 +108,7 @@ def test_patch_resolves_incident_and_records_resolution(client):
                 "resolvedBy": "M. Silva",
             },
         },
+        headers=auth_headers,
     )
     assert response.status_code == 200
     body = response.json()
@@ -117,13 +119,17 @@ def test_patch_resolves_incident_and_records_resolution(client):
     assert body["timeline"][-1]["type"] == "resolution"
 
 
-def test_patch_status_change_is_recorded_in_timeline(client):
-    body = client.patch(f"{API}/incidents/INC-2389", json={"status": "MONITORING"}).json()
+def test_patch_status_change_is_recorded_in_timeline(client, auth_headers):
+    body = client.patch(
+        f"{API}/incidents/INC-2389", json={"status": "MONITORING"}, headers=auth_headers
+    ).json()
     assert body["status"] == "MONITORING"
     assert body["timeline"][-1]["title"] == "Status changed to MONITORING"
     assert "resolvedAt" not in body
 
 
-def test_patch_unknown_incident_returns_404(client):
-    response = client.patch(f"{API}/incidents/nope", json={"status": "MONITORING"})
+def test_patch_unknown_incident_returns_404(client, auth_headers):
+    response = client.patch(
+        f"{API}/incidents/nope", json={"status": "MONITORING"}, headers=auth_headers
+    )
     assert response.status_code == 404

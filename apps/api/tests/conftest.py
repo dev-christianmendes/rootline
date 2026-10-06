@@ -32,6 +32,7 @@ os.environ["ROOTLINE_DATABASE_URL"] = os.environ.get(
 os.environ["ROOTLINE_AUTO_SEED"] = "false"
 os.environ["ROOTLINE_ANALYSIS_DELAY_MS"] = "0"
 os.environ["ROOTLINE_SEED_DATA_DIR"] = str(SEED_DIR)
+os.environ["ROOTLINE_SECRET_KEY"] = "test-secret-key-for-testing-only"
 
 
 @pytest.fixture(scope="session")
@@ -42,12 +43,9 @@ def seed_dir() -> Path:
 
 
 @pytest.fixture()
-def client(seed_dir: Path) -> Iterator:
-    from fastapi.testclient import TestClient
-
+def db_session(seed_dir: Path):
     from app import models  # noqa: F401  (register tables on Base.metadata)
     from app.db import Base, SessionLocal, engine
-    from app.main import create_app
     from app.seed import seed
 
     # Every test starts from an empty database with the mock dataset loaded,
@@ -58,8 +56,45 @@ def client(seed_dir: Path) -> Iterator:
     db = SessionLocal()
     try:
         seed(db, seed_dir, force=True)
+        # Create a test user with pre-computed hash
+        from app.models import User as UserModel
+
+        # Pre-computed bcrypt hash for "testpass123" (cost=12)
+        TEST_PASSWORD_HASH = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.PZvO.S"
+
+        test_user = UserModel(
+            id="usr-test",
+            username="testuser",
+            email="test@example.com",
+            full_name="Test User",
+            hashed_password=TEST_PASSWORD_HASH,
+            is_active=True,
+        )
+        db.add(test_user)
+        db.commit()
     finally:
         db.close()
 
+    yield
+
+    # Cleanup
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture()
+def client(db_session) -> Iterator:
+    from fastapi.testclient import TestClient
+
+    from app.main import create_app
+
     with TestClient(create_app()) as test_client:
         yield test_client
+
+
+@pytest.fixture()
+def auth_headers() -> dict:
+    """Create authentication headers for the test user by generating a JWT directly."""
+    from app.auth.security import create_access_token
+
+    access_token = create_access_token(subject="testuser")
+    return {"Authorization": f"Bearer {access_token}"}

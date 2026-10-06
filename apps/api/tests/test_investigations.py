@@ -42,19 +42,19 @@ def test_hypothesis_payload_shape(client):
             assert evidence["impact"] in {"supporting", "counter"}
 
 
-def test_every_incident_can_be_analyzed(client):
+def test_every_incident_can_be_analyzed(client, auth_headers):
     """"Run analysis" 404s when an incident has no investigation, which hid the
     investigation link on the incident detail page."""
     for incident in client.get(f"{API}/incidents").json():
         incident_id = incident["id"]
-        response = client.post(f"{API}/incidents/{incident_id}/analyze")
+        response = client.post(f"{API}/incidents/{incident_id}/analyze", headers=auth_headers)
         assert response.status_code == 200, incident_id
         assert response.json()["incidentId"] == incident_id
         assert response.json()["hypotheses"]
 
 
-def test_analyze_unknown_incident_returns_404(client):
-    response = client.post(f"{API}/incidents/nope/analyze")
+def test_analyze_unknown_incident_returns_404(client, auth_headers):
+    response = client.post(f"{API}/incidents/nope/analyze", headers=auth_headers)
     assert response.status_code == 404
     assert response.json()["detail"] == "Incident not found"
 
