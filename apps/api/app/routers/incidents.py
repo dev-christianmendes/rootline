@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_active_user
 from app.db import get_db
 from app.models import Incident, LogEntry, Service, Trace, User as UserModel
+from app.rate_limiter import rate_limit, INCIDENT_CREATE_RATE_LIMIT, INCIDENT_PATCH_RATE_LIMIT
 from app.schemas import IncidentCreate, IncidentOut, IncidentPatch, LogEntryOut, TraceOut
 
 router = APIRouter(tags=["incidents"])
@@ -63,6 +64,7 @@ def get_incident(incident_id: str, db: Session = Depends(get_db)) -> Incident:
     response_model_exclude_none=True,
     status_code=status.HTTP_201_CREATED,
     responses={400: {"description": "Missing title"}},
+    dependencies=[rate_limit(INCIDENT_CREATE_RATE_LIMIT)],
 )
 def create_incident(
     payload: IncidentCreate,
@@ -120,6 +122,7 @@ def create_incident(
     response_model_by_alias=True,
     response_model_exclude_none=True,
     responses={404: {"description": "Incident not found"}},
+    dependencies=[rate_limit(INCIDENT_PATCH_RATE_LIMIT)],
 )
 def patch_incident(
     incident_id: str,

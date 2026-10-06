@@ -13,6 +13,7 @@ from app.db import Base, SessionLocal, engine
 from app.auth import auth_router
 from app.routers import deployments, health, incidents, investigations, services, system
 from app.seed import seed
+from app.rate_limiter import add_rate_limiter
 
 logger = logging.getLogger("rootline.api")
 
@@ -66,6 +67,9 @@ def create_app() -> FastAPI:
         ),
         lifespan=lifespan,
     )
+
+    # Add rate limiter
+    add_rate_limiter(application)
 
     application.add_middleware(
         CORSMiddleware,

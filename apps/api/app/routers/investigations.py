@@ -10,6 +10,7 @@ from app.auth.dependencies import get_current_active_user
 from app.config import get_settings
 from app.db import get_db
 from app.models import Incident, Investigation, User as UserModel
+from app.rate_limiter import rate_limit, ANALYZE_RATE_LIMIT
 from app.schemas import InvestigationOut
 
 router = APIRouter(tags=["investigations"])
@@ -55,6 +56,7 @@ def get_investigation(
             "description": "Incident not found, or no analysis available for it"
         }
     },
+    dependencies=[rate_limit(ANALYZE_RATE_LIMIT)],
 )
 async def analyze_incident(
     incident_id: str,

@@ -8,11 +8,12 @@ from app.auth.security import create_access_token, verify_password, get_password
 from app.auth.schemas import LoginRequest, Token, User, UserCreate, UserInDB
 from app.db import get_db
 from app.models import User as UserModel
+from app.rate_limiter import rate_limit, AUTH_RATE_LIMIT
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, dependencies=[rate_limit(AUTH_RATE_LIMIT)])
 def login(
     form_data: LoginRequest,
     db: Session = Depends(get_db),
@@ -41,7 +42,7 @@ def read_users_me(
     return current_user
 
 
-@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED, dependencies=[rate_limit(AUTH_RATE_LIMIT)])
 def register(
     user_in: UserCreate,
     db: Session = Depends(get_db),
