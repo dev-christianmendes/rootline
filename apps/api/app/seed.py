@@ -17,6 +17,7 @@ from app.models import (
     MetricPoint,
     Service,
     Trace,
+    User,
 )
 
 DATASETS = (
@@ -62,6 +63,7 @@ def clear(db: Session) -> None:
         MetricPoint,
         Deployment,
         Incident,
+        User,
         Service,
     ):
         db.execute(delete(model))
