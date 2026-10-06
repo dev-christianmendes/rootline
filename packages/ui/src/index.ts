@@ -11,4 +11,5 @@ export * from "./components/separator";
 export * from "./components/skeleton";
 export * from "./components/tooltip";
 export * from "./components/textarea";
+export * from "./components/pagination";
 export * from "./lib/utils";

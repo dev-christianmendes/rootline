@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
   cn,
+  Pagination,
 } from "@rootline/ui";
 
 import { useIncidents } from "@/features/incidents/use-incidents";
@@ -41,18 +42,31 @@ const ALL_STATUSES: IncidentStatus[] = [
 ];
 
 export function IncidentCenter() {
-  const incidents = useIncidents();
-  const serviceName = useServiceNames();
+  const [page, setPage] = useState(1);
+  const limit = 50;
+  const offset = (page - 1) * 50;
 
   const [query, setQuery] = useState("");
   const [severities, setSeverities] = useState<Severity[]>([]);
   const [statuses, setStatuses] = useState<IncidentStatus[]>([]);
   const [creating, setCreating] = useState(false);
 
+  // Pass search/filter params to the API
+  const incidentsParams = {
+    offset,
+    limit: 50,
+    q: query || undefined,
+    severity: severities.length === 1 ? severities[0] : undefined,
+    status: statuses.length === 1 ? statuses[0] : undefined,
+  };
+
+  const incidents = useIncidents(incidentsParams);
+  const serviceName = useServiceNames();
+
   // Connect to WebSocket for the first incident in the list (or first active)
   const firstActiveIncident = useMemo(() => {
-    return (incidents.data ?? []).find((i) => i.status !== "RESOLVED");
-  }, [incidents.data]);
+    return (incidents.data?.items ?? []).find((i) => i.status !== "RESOLVED");
+  }, [incidents.data?.items]);
 
   const { isConnected: wsConnected } = useIncidentWebSocket({
     incidentId: firstActiveIncident?.id ?? "",
@@ -64,7 +78,7 @@ export function IncidentCenter() {
   });
 
   const filtered = useMemo(() => {
-    const list = incidents.data ?? [];
+    const list = incidents.data?.items ?? [];
     const q = query.trim().toLowerCase();
     return list
       .filter((i) => {
@@ -79,7 +93,7 @@ export function IncidentCenter() {
         return true;
       })
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-  }, [incidents.data, query, severities, statuses, serviceName]);
+  }, [incidents.data?.items, query, severities, statuses, serviceName]);
 
   if (incidents.isLoading) return <LoadingBlock />;
   if (incidents.isError) {
@@ -90,6 +104,9 @@ export function IncidentCenter() {
       />
     );
   }
+
+  const totalIncidents = incidents.data?.total ?? 0;
+  const totalPages = Math.ceil(totalIncidents / 50) || 1;
 
   const toggle = <T,>(
     setter: React.Dispatch<React.SetStateAction<T[]>>,
@@ -107,7 +124,10 @@ export function IncidentCenter() {
           <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1); // Reset to first page when searching
+            }}
             placeholder="Search ID, title, service, assignee…"
             className="pl-8"
           />
@@ -118,7 +138,10 @@ export function IncidentCenter() {
             <ToggleChip
               key={sev}
               active={severities.includes(sev)}
-              onClick={() => toggle(setSeverities, sev)}
+              onClick={() => {
+                toggle(setSeverities, sev);
+                setPage(1); // Reset to first page when filtering
+              }}
               label={sev}
               className="font-mono"
             />
@@ -128,7 +151,10 @@ export function IncidentCenter() {
             <ToggleChip
               key={st}
               active={statuses.includes(st)}
-              onClick={() => toggle(setStatuses, st)}
+              onClick={() => {
+                toggle(setStatuses, st);
+                setPage(1); // Reset to first page when filtering
+              }}
               label={st}
             />
           ))}
@@ -223,12 +249,20 @@ export function IncidentCenter() {
 
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-xs">
-          {filtered.length} of {(incidents.data ?? []).length} incidents
+          Showing {filtered.length} of {totalIncidents} incidents (page {page}{" "}
+          of {totalPages})
         </p>
         <Button size="sm" onClick={() => setCreating(true)}>
           <Plus className="size-4" /> New incident
         </Button>
       </div>
+
+      <Pagination
+        page={page}
+        pageCount={totalPages}
+        onPageChange={setPage}
+        showFirstLast
+      />
 
       <NewIncidentDialog open={creating} onOpenChange={setCreating} />
     </div>

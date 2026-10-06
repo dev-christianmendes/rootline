@@ -1,15 +1,35 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Incident, IncidentStatus } from "@rootline/types";
+import type { Incident, IncidentStatus, Severity } from "@rootline/types";
 
 import { api } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 
-export function useIncidents() {
+export interface UseIncidentsParams {
+  offset?: number;
+  limit?: number;
+  severity?: Severity;
+  status?: IncidentStatus;
+  q?: string;
+}
+
+export function useIncidents(params: UseIncidentsParams = {}) {
+  const { offset = 0, limit = 50, severity, status, q } = params;
+
   return useQuery({
-    queryKey: qk.incidents,
-    queryFn: () => api.get<Incident[]>("/incidents"),
+    queryKey: [...qk.incidents, params],
+    queryFn: () => {
+      const searchParams = new URLSearchParams();
+      if (offset) searchParams.set("offset", String(offset));
+      if (limit) searchParams.set("limit", String(limit));
+      if (severity) searchParams.set("severity", severity);
+      if (status) searchParams.set("status", status);
+      if (q) searchParams.set("q", q);
+      return api.get<{ items: Incident[]; total: number }>(
+        `/incidents?${searchParams.toString()}`,
+      );
+    },
   });
 }
 

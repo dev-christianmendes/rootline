@@ -7,25 +7,43 @@ import type { MetricSeries, Service, SystemHealth } from "@rootline/types";
 import { api } from "@/lib/api";
 import { qk } from "@/lib/query-keys";
 
-export function useServices() {
+export interface UseServicesParams {
+  offset?: number;
+  limit?: number;
+}
+
+export function useServices(params: UseServicesParams = {}) {
+  const { offset = 0, limit = 50 } = params;
+
   return useQuery({
-    queryKey: qk.services,
-    queryFn: () => api.get<Service[]>("/services"),
+    queryKey: [...qk.services, params],
+    queryFn: () => {
+      const searchParams = new URLSearchParams();
+      if (offset) searchParams.set("offset", String(offset));
+      if (limit) searchParams.set("limit", String(limit));
+      return api.get<{ items: Service[]; total: number }>(
+        `/services?${searchParams.toString()}`,
+      );
+    },
   });
 }
 
 /** Memoized id -> Service map, avoids O(n) finds across many components. */
-export function useServicesMap(): Map<string, Service> {
-  const services = useServices();
+export function useServicesMap(
+  params: UseServicesParams = {},
+): Map<string, Service> {
+  const services = useServices(params);
   return React.useMemo(
-    () => new Map((services.data ?? []).map((s) => [s.id, s])),
-    [services.data],
+    () => new Map((services.data?.items ?? []).map((s) => [s.id, s])),
+    [services.data?.items],
   );
 }
 
 /** Returns a stable (id: string) => name resolver backed by the services map. */
-export function useServiceNames(): (id: string) => string {
-  const services = useServicesMap();
+export function useServiceNames(
+  params: UseServicesParams = {},
+): (id: string) => string {
+  const services = useServicesMap(params);
   return React.useCallback(
     (id: string) => services.get(id)?.name ?? id,
     [services],

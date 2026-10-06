@@ -53,6 +53,7 @@ import {
 import { ErrorState, LoadingBlock } from "@/components/common/states";
 import { useIncidentWebSocket } from "@/hooks/use-incident-websocket";
 import { useServiceMetricsWebSocket } from "@/hooks/use-service-metrics-websocket";
+import { getItems } from "@/lib/pagination-helpers";
 
 const KIND_LABEL: Record<string, string> = {
   frontend: "Frontend",
@@ -82,22 +83,24 @@ export function Dashboard() {
     services.isError ||
     deployments.isError;
 
-  const activeIncidents = (incidents.data ?? [])
+  const activeIncidents = getItems(incidents.data)
     .filter((i) => i.status !== "RESOLVED")
     .sort(
       (a, b) =>
         SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
     );
 
-  const serviceRows = (services.data ?? []).slice().sort((a, b) => {
-    const rank: Record<string, number> = {
-      critical: 0,
-      degraded: 1,
-      healthy: 2,
-      unknown: 3,
-    };
-    return (rank[a.health] ?? 9) - (rank[b.health] ?? 9);
-  });
+  const serviceRows = getItems(services.data)
+    .slice()
+    .sort((a, b) => {
+      const rank: Record<string, number> = {
+        critical: 0,
+        degraded: 1,
+        healthy: 2,
+        unknown: 3,
+      };
+      return (rank[a.health] ?? 9) - (rank[b.health] ?? 9);
+    });
 
   // Connect to WebSocket for the first active incident
   const firstActiveIncident = activeIncidents[0];
@@ -215,12 +218,12 @@ export function Dashboard() {
               className="lg:col-span-2"
             />
             <ServiceHealthTable
-              services={serviceRows}
+              services={getItems(services.data)}
               className="lg:col-span-3"
             />
           </div>
 
-          <RecentDeployments deployments={deployments.data ?? []} />
+          <RecentDeployments deployments={getItems(deployments.data)} />
         </>
       )}
     </div>
@@ -335,7 +338,7 @@ function ActiveIncidentsPanel({
   incidents,
   className,
 }: {
-  incidents: NonNullable<ReturnType<typeof useIncidents>["data"]>;
+  incidents: NonNullable<ReturnType<typeof useIncidents>["data"]>["items"];
   className?: string;
 }) {
   const name = useServiceNames();
@@ -390,7 +393,7 @@ function ServiceHealthTable({
   services,
   className,
 }: {
-  services: NonNullable<ReturnType<typeof useServices>["data"]>;
+  services: NonNullable<ReturnType<typeof useServices>["data"]>["items"];
   className?: string;
 }) {
   return (
@@ -490,7 +493,7 @@ function ServiceHealthTable({
 function RecentDeployments({
   deployments,
 }: {
-  deployments: NonNullable<ReturnType<typeof useDeployments>["data"]>;
+  deployments: NonNullable<ReturnType<typeof useDeployments>["data"]>["items"];
 }) {
   const recent = deployments
     .slice()
