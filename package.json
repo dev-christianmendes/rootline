@@ -38,9 +38,13 @@
     "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^19.0.0",
     "@commitlint/config-conventional": "^19.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/npm": "^12.0.0",
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
-    "prettier": "^3.9.9"
+    "prettier": "^3.9.9",
+    "semantic-release": "^24.0.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,md,yml,yaml}": "prettier --write",

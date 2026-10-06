@@ -4,10 +4,17 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  packages: write
+  id-token: write
 
 jobs:
   quality:
@@ -16,12 +23,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # Required for semantic-release
 
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: npm ci
@@ -34,6 +44,10 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Dependency audit (npm)
+        run: npm audit --audit-level=high
+        continue-on-error: true
 
   api:
     name: API tests · SQLite + PostgreSQL
@@ -80,6 +94,18 @@ jobs:
           ROOTLINE_TEST_DATABASE_URL: postgresql+psycopg://rootline:rootline@localhost:5432/rootline_test
         run: python -m pytest apps/api -q
 
+      - name: Dependency audit (pip)
+        run: pip-audit --desc --format=json --output=pip-audit.json || true
+        continue-on-error: true
+
+      - name: Upload pip-audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-results
+          path: pip-audit.json
+          retention-days: 7
+
   mock-data:
     name: Mock data determinism
     runs-on: ubuntu-latest
@@ -98,3 +124,92 @@ jobs:
 
       - name: Assert mock data matches the generator
         run: npm run test:mock
+
+  security:
+    name: Security scanning
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: typescript, python
+          queries: security-extended,security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:typescript"
+          upload: true
+
+      - name: Trivy container scan (API)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "ghcr.io/${{ github.repository }}/rootline-api:latest"
+          format: "sarif"
+          output: "trivy-api.sarif"
+          severity: "HIGH,CRITICAL"
+        continue-on-error: true
+
+      - name: Trivy container scan (Web)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "ghcr.io/${{ github.repository }}/rootline-web:latest"
+          format: "sarif"
+          output: "trivy-web.sarif"
+          severity: "HIGH,CRITICAL"
+        continue-on-error: true
+
+      - name: Upload Trivy results (API)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-api.sarif
+          category: trivy-api
+
+      - name: Upload Trivy results (Web)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-web.sarif
+          category: trivy-web
+
+  release:
+    name: Release
+    needs: [quality, api, mock-data, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
