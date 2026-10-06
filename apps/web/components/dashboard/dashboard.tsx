@@ -51,6 +51,8 @@ import {
   StatusBadge,
 } from "@/components/common/badges";
 import { ErrorState, LoadingBlock } from "@/components/common/states";
+import { useIncidentWebSocket } from "@/hooks/use-incident-websocket";
+import { useServiceMetricsWebSocket } from "@/hooks/use-service-metrics-websocket";
 
 const KIND_LABEL: Record<string, string> = {
   frontend: "Frontend",
@@ -97,6 +99,30 @@ export function Dashboard() {
     return (rank[a.health] ?? 9) - (rank[b.health] ?? 9);
   });
 
+  // Connect to WebSocket for the first active incident
+  const firstActiveIncident = activeIncidents[0];
+  const { isConnected: incidentWsConnected } = useIncidentWebSocket({
+    incidentId: firstActiveIncident?.id ?? "",
+    enabled: !!firstActiveIncident,
+    onIncidentUpdate: () => {
+      incidents.refetch();
+      health.refetch();
+    },
+  });
+
+  // Connect to WebSocket for the first critical/degraded service metrics
+  const firstCriticalService = serviceRows.find(
+    (s) => s.health === "critical" || s.health === "degraded",
+  );
+  const { isConnected: metricsWsConnected } = useServiceMetricsWebSocket({
+    serviceId: firstCriticalService?.id ?? "",
+    enabled: !!firstCriticalService,
+    onMetricsUpdate: () => {
+      services.refetch();
+      health.refetch();
+    },
+  });
+
   if (error) {
     return (
       <ErrorState
@@ -120,11 +146,55 @@ export function Dashboard() {
             Current state of your systems, incidents and recent changes.
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/incidents">
-            Incident Center <ChevronRight className="size-3.5" />
-          </Link>
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "flex items-center gap-1 text-xs px-2 py-1 rounded border",
+                incidentWsConnected
+                  ? "border-success/30 bg-success/10 text-success"
+                  : "border-warning/30 bg-warning/10 text-warning",
+              )}
+            >
+              {incidentWsConnected ? (
+                <>
+                  <span className="size-1.5 rounded-full bg-success" />
+                  Incidentos
+                </>
+              ) : (
+                <>
+                  <span className="size-1.5 rounded-full bg-warning animate-pulse" />
+                  Conectando...
+                </>
+              )}
+            </span>
+            <span
+              className={cn(
+                "flex items-center gap-1 text-xs px-2 py-1 rounded border",
+                metricsWsConnected
+                  ? "border-success/30 bg-success/10 text-success"
+                  : "border-warning/30 bg-warning/10 text-warning",
+              )}
+            >
+              {metricsWsConnected ? (
+                <>
+                  <span className="size-1.5 rounded-full bg-success" />
+                  Métricas
+                </>
+              ) : (
+                <>
+                  <span className="size-1.5 rounded-full bg-warning animate-pulse" />
+                  Conectando...
+                </>
+              )}
+            </span>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/incidents">
+              Incident Center <ChevronRight className="size-3.5" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {loading ? (
