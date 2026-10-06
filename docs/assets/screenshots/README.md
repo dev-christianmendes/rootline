@@ -54,7 +54,7 @@ npm run test:e2e:ui
 Após adicionar screenshots, o README.md já referencia os caminhos corretos:
 
 ```markdown
-![Dashboard Overview](docs/assets/screenshots/dashboard-overview.png)
+![Dashboard Overview](docs/assets/screenshots/dashboard-overview.svg)
 ```
 
 ---

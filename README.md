@@ -26,31 +26,31 @@ _Intelligent incident investigation & operations platform. Rootline correlaciona
 
 > Visão geral do estado dos sistemas com métricas de saúde, incidentes ativos e deployments recentes.
 
-![Dashboard Overview](docs/assets/screenshots/dashboard-overview.png)
+![Dashboard Overview](docs/assets/screenshots/dashboard-overview.svg)
 
 ### Incident Center
 
 > Lista de incidentes com filtros por severidade, status e busca textual.
 
-![Incident Center](docs/assets/screenshots/incident-center.png)
+![Incident Center](docs/assets/screenshots/incident-center.svg)
 
 ### Incident Detail & Analysis
 
 > Detalhes do incidente com timeline, evidências, hipóteses e grafo de evidências.
 
-![Incident Detail](docs/assets/screenshots/incident-detail.png)
+![Incident Detail](docs/assets/screenshots/incident-detail.svg)
 
 ### Service Map & Dependencies
 
 > Visualização da topologia de serviços e dependências com saúde em tempo real.
 
-![Service Map](docs/assets/screenshots/service-map.png)
+![Service Map](docs/assets/screenshots/service-map.svg)
 
 ### Real-time Metrics & WebSocket
 
 > Métricas em tempo real via WebSocket com gráficos interativos.
 
-![Real-time Metrics](docs/assets/screenshots/realtime-metrics.png)
+![Real-time Metrics](docs/assets/screenshots/realtime-metrics.svg)
 
 ---
 
@@ -247,7 +247,7 @@ POSTGRES_DB=rootline
 
 ### 1. Dashboard Executivo
 
-![Dashboard](docs/assets/screenshots/dashboard-overview.png)
+![Dashboard](docs/assets/screenshots/dashboard-overview.svg)
 
 - **Health Overview**: Availability, Latência média, Error Rate, Contagem de serviços, Incidentes ativos
 - **Painel de Incidentes Ativos**: Lista com severidade (P1-P4), status, serviço afetado, duração
@@ -256,7 +256,7 @@ POSTGRES_DB=rootline
 
 ### 2. Incident Center
 
-![Incident Center](docs/assets/screenshots/incident-center.png)
+![Incident Center](docs/assets/screenshots/incident-center.svg)
 
 - **Lista paginada** com paginação server-side (50 itens/página)
 - **Filtros avançados**: Severidade (P1-P4), Status (DETECTED→RESOLVED), Busca textual (ID, título, serviço, assignee)
@@ -266,7 +266,7 @@ POSTGRES_DB=rootline
 
 ### 3. Incident Detail & AI Analysis
 
-![Incident Analysis](docs/assets/screenshots/incident-detail.png)
+![Incident Analysis](docs/assets/screenshots/incident-detail.svg)
 
 #### Header do Incidente
 
@@ -298,7 +298,7 @@ Cada hipótese contém:
 
 ### 4. Evidence Graph Visual
 
-![Evidence Graph](docs/assets/screenshots/evidence-graph.png)
+![Evidence Graph](docs/assets/screenshots/evidence-graph.svg)
 
 - Grafo interativo (React Flow / XYFlow)
 - Nós: Hipótese central + Evidências (verdes) + Contra-evidências (vermelhas)
@@ -307,7 +307,7 @@ Cada hipótese contém:
 
 ### 5. Service Map & Dependencies
 
-![Service Map](docs/assets/screenshots/service-map.png)
+![Service Map](docs/assets/screenshots/service-map.svg)
 
 - **Topologia visual** (DAG) com Cytoscape/XYFlow
 - **Nós**: Serviços com health badge (🟢🟡🔴⚪)
@@ -317,7 +317,7 @@ Cada hipótese contém:
 
 ### 6. Real-time Metrics & WebSocket
 
-![Real-time Metrics](docs/assets/screenshots/realtime-metrics.png)
+![Real-time Metrics](docs/assets/screenshots/realtime-metrics.svg)
 
 - **WebSocket connections**: `/ws/services/{id}/metrics`, `/ws/incidents/{id}`, `/ws/logs`
 - **Charts em tempo real**: Recharts com streaming de dados
