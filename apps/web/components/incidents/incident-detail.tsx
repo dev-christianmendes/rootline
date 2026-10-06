@@ -55,6 +55,8 @@ import { Timeline } from "@/components/incidents/timeline";
 import { ResolveDialog } from "@/components/incidents/resolve-dialog";
 import { useInvestigationForIncident } from "@/features/analysis/use-analysis";
 import { EvidenceGraph } from "@/components/evidence-graph/evidence-graph";
+import { useIncidentWebSocket } from "@/hooks/use-incident-websocket";
+import { useLogsWebSocket } from "@/hooks/use-logs-websocket";
 
 export function IncidentDetail({ incidentId }: { incidentId: string }) {
   const incidentQ = useIncident(incidentId);
@@ -70,6 +72,22 @@ export function IncidentDetail({ incidentId }: { incidentId: string }) {
         .sort((a, b) => b.confidence - a.confidence)[0],
     [investigation.data],
   );
+
+  // WebSocket connections for real-time updates
+  const { isConnected: incidentWsConnected } = useIncidentWebSocket({
+    incidentId,
+    onIncidentUpdate: () => {
+      incidentQ.refetch();
+    },
+  });
+
+  const { isConnected: logsWsConnected, lastUpdate: logsUpdate } =
+    useLogsWebSocket({
+      incidentId,
+      onLogsUpdate: () => {
+        incidentQ.refetch();
+      },
+    });
 
   if (incidentQ.isLoading) return <LoadingBlock />;
   if (incidentQ.isError || !incidentQ.data) {

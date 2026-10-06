@@ -1,7 +1,4 @@
-import type {
-  IncidentStatus,
-  Severity,
-} from "@rootline/types";
+import type { IncidentStatus, Severity } from "@rootline/types";
 
 /* ------------------------------------------------------------------ */
 /* Severity                                                            */
@@ -61,6 +58,8 @@ export function nextStatuses(current: IncidentStatus): IncidentStatus[] {
 /* Time / formatting                                                   */
 /* ------------------------------------------------------------------ */
 
+export type Locale = "pt-BR" | "en-US" | "es-ES" | "fr-FR" | "de-DE";
+
 const UTC_TIME: Intl.DateTimeFormatOptions = {
   hour: "2-digit",
   minute: "2-digit",
@@ -86,19 +85,32 @@ const UTC_DATE: Intl.DateTimeFormatOptions = {
   timeZone: "UTC",
 };
 
-export function formatTime(iso: string | undefined | null): string {
+/**
+ * Format time using the specified locale (defaults to pt-BR for backward compatibility).
+ * For user-facing components, prefer using the `useFormat` hook which uses the user's locale.
+ */
+export function formatTime(
+  iso: string | undefined | null,
+  locale: Locale = "pt-BR",
+): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("pt-BR", UTC_TIME);
+  return new Date(iso).toLocaleTimeString(locale, UTC_TIME);
 }
 
-export function formatClock(iso: string | undefined | null): string {
+export function formatClock(
+  iso: string | undefined | null,
+  locale: Locale = "pt-BR",
+): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("pt-BR", UTC_CLOCK);
+  return new Date(iso).toLocaleTimeString(locale, UTC_CLOCK);
 }
 
-export function formatDateTime(iso: string | undefined | null): string {
+export function formatDateTime(
+  iso: string | undefined | null,
+  locale: Locale = "pt-BR",
+): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("pt-BR", UTC_DATE);
+  return new Date(iso).toLocaleString(locale, UTC_DATE);
 }
 
 export function formatIso(ts: string): string {
@@ -129,8 +141,12 @@ export function formatPercent(value: number, digits = 2): string {
   return `${value.toFixed(digits)}%`;
 }
 
-export function formatNumber(value: number, digits = 0): string {
-  return value.toLocaleString("en-US", {
+export function formatNumber(
+  value: number,
+  digits = 0,
+  locale: Locale = "pt-BR",
+): string {
+  return value.toLocaleString(locale, {
     maximumFractionDigits: digits,
   });
 }
@@ -141,7 +157,11 @@ export function formatNumber(value: number, digits = 0): string {
 
 export const HEALTH_META: Record<
   "healthy" | "degraded" | "critical" | "unknown",
-  { label: string; dot: string; badge: "success" | "warning" | "critical" | "muted" }
+  {
+    label: string;
+    dot: string;
+    badge: "success" | "warning" | "critical" | "muted";
+  }
 > = {
   healthy: { label: "Healthy", dot: "bg-success", badge: "success" },
   degraded: { label: "Degraded", dot: "bg-warning", badge: "warning" },
