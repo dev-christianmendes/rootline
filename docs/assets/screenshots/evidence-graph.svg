@@ -1,0 +1,31 @@
+<svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, sans-serif" font-size="48" fill="#64748b">🕸️ Evidence Graph (XYFlow/React Flow)</text>
+  <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" fill="#475569">Screenshot placeholder - replace with actual screenshot</text>
+  <rect x="200" y="350" width="200" height="120" rx="12" fill="#059669" stroke="#10b981" stroke-width="2"/>
+  <text x="300" y="390" font-family="system-ui, sans-serif" font-size="16" fill="white" text-anchor="middle">Hypothesis<br/>H1: Deployment v2.8.1<br/>Confidence: 82%</text>
+  <rect x="600" y="300" width="200" height="100" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+  <text x="700" y="330" font-family="system-ui, sans-serif" font-size="14" fill="#22c55e" text-anchor="middle">✓ Evidence<br/>Deployment v2.8.1 at 14:02</text>
+  <rect x="600" y="450" width="200" height="100" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+  <text x="700" y="480" font-family="system-ui, sans-serif" font-size="14" fill="#22c55e" text-anchor="middle">✓ Evidence<br/>Error rate +38% at 14:06</text>
+  <rect x="600" y="600" width="200" height="100" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="2"/>
+  <text x="700" y="630" font-family="system-ui, sans-serif" font-size="14" fill="#ef4444" text-anchor="middle">✗ Counter-Evidence<br/>No code change in authorize path</text>
+  <rect x="1000" y="300" width="200" height="100" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+  <text x="1100" y="330" font-family="system-ui, sans-serif" font-size="14" fill="#22c55e" text-anchor="middle">✓ Evidence<br/>DB latency stable (p95=190ms)</text>
+  <rect x="1000" y="450" width="200" height="100" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+  <text x="1100" y="480" font-family="system-ui, sans-serif" font-size="14" fill="#22c55e" text-anchor="middle">✓ Evidence<br/>Redis healthy (99.1% hit rate)</text>
+  <rect x="1000" y="600" width="200" height="100" rx="12" fill="#1e293b" stroke="#ef4444" stroke-width="2"/>
+  <text x="1100" y="630" font-family="system-ui, sans-serif" font-size="14" fill="#ef4444" text-anchor="middle">✗ Counter-Evidence<br/>CPU normal (66%)</text>
+  <line x1="500" y1="410" x2="600" y2="350" stroke="#22c55e" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="500" y1="500" x2="600" y2="500" stroke="#22c55e" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="500" y1="650" x2="600" y2="650" stroke="#ef4444" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="500" y1="350" x2="1000" y2="350" stroke="#22c55e" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="500" y1="500" x2="1000" y2="500" stroke="#22c55e" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="500" y1="650" x2="1000" y2="650" stroke="#ef4444" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+  </defs>
+  <text x="960" y="900" font-family="system-ui, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Interactive: Zoom, Pan, Click for Details | Green = Supporting | Red = Counter</text>
+</svg>

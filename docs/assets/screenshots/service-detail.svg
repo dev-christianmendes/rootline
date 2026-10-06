@@ -1,0 +1,19 @@
+<svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, sans-serif" font-size="48" fill="#64748b">🔧 Service Detail</text>
+  <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" fill="#475569">Screenshot placeholder - replace with actual screenshot</text>
+  <rect x="100" y="150" width="1720" height="100" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="200" y="220" font-family="system-ui, sans-serif" font-size="20" fill="#94a3b8">Header: payment-api | 🔴 Critical | v2.8.1 | Team: Payments | Version: v2.8.1</text>
+  <rect x="100" y="300" width="840" height="700" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="520" y="340" font-family="system-ui, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Metrics Charts (Tabs: latency | error_rate | request_rate | cpu | memory)</text>
+  <rect x="150" y="380" width="740" height="600" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text x="520" y="700" font-family="system-ui, sans-serif" font-size="18" fill="#64748b" text-anchor="middle">Interactive Recharts | Time Range Filter | Metric Filter</text>
+  <rect x="980" y="300" width="840" height="350" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="1400" y="340" font-family="system-ui, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Logs (Filter: level, query, time)</text>
+  <rect x="1030" y="380" width="740" height="260" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text x="1400" y="550" font-family="system-ui, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">Structured Logs | Level Filter | Search</text>
+  <rect x="980" y="680" width="840" height="320" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="1400" y="720" font-family="system-ui, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Traces & Deployments</text>
+  <rect x="1030" y="760" width="740" height="240" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text x="1400" y="900" font-family="system-ui, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">Trace List | Span Details | Deployment Correlation</text>
+</svg>
