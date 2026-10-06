@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     # Set to 0 to return immediately.
     analysis_delay_ms: int = 900
 
+    # Authentication
+    secret_key: str = "change-me-in-production-use-a-secure-random-string"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
+
     app_version: str = "0.1.0"
     environment: str = "development"
 

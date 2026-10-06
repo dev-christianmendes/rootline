@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import subprocess
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -8,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.db import Base, SessionLocal, engine
+from app.auth import auth_router
 from app.routers import deployments, health, incidents, investigations, services, system
 from app.seed import seed
 
@@ -19,7 +22,22 @@ API_PREFIX = "/api/v1"
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     settings = get_settings()
-    Base.metadata.create_all(bind=engine)
+
+    # Run alembic migrations only in production (Docker), not in tests (SQLite)
+    # Tests use SQLite and create tables via Base.metadata.create_all in conftest.py
+    if not settings.database_url.startswith("sqlite"):
+        try:
+            result = subprocess.run(
+                ["alembic", "upgrade", "head"],
+                cwd="/srv/api",
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            logger.info("Alembic migrations applied: %s", result.stdout.strip())
+        except subprocess.CalledProcessError as e:
+            logger.error("Alembic migration failed: %s", e.stderr)
+            raise
 
     if settings.auto_seed:
         db = SessionLocal()
@@ -57,6 +75,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    application.include_router(auth_router, prefix=API_PREFIX)
     application.include_router(health.router, prefix=API_PREFIX)
     application.include_router(system.router, prefix=API_PREFIX)
     application.include_router(services.router, prefix=API_PREFIX)

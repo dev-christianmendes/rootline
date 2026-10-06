@@ -14,6 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY apps/api/pyproject.toml ./
 COPY apps/api/app ./app
+COPY apps/api/alembic ./alembic
+COPY apps/api/alembic.ini ./
 
 # The seed datasets are baked into the image so the API can bootstrap an empty
 # database without a bind mount. ROOTLINE_SEED_DATA_DIR can point elsewhere.
