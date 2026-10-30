@@ -60,11 +60,15 @@ export function DeploymentTimeline() {
   if (deps.length === 0) return <EmptyState title="No deployments" />;
 
   const all = [...deps, ...incs];
-  const min = Math.min(...all.map((d) => new Date(d.startedAt).getTime()));
-  const max = Math.max(
-    ...all.map((d) => new Date(d.startedAt).getTime()),
-    Date.now(),
+  // Scale to the data itself: mixing in Date.now() squashed every marker
+  // against the left edge whenever the dataset was not from today.
+  const times = all.map((d) => new Date(d.startedAt).getTime());
+  const pad = Math.max(
+    60_000,
+    (Math.max(...times) - Math.min(...times)) * 0.05,
   );
+  const min = Math.min(...times) - pad;
+  const max = Math.max(...times) + pad;
   const range = Math.max(1, max - min);
   const pct = (ts: string) => ((new Date(ts).getTime() - min) / range) * 100;
 
