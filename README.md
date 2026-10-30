@@ -112,7 +112,7 @@ Variáveis de ambiente: copie `.env.example` para `.env`. Defina um `ROOTLINE_SE
 
 | Suíte                | Onde                | Tamanho                           |
 | -------------------- | ------------------- | --------------------------------- |
-| API (pytest)         | `apps/api/tests/`   | 3 arquivos, 26 testes             |
+| API (pytest)         | `apps/api/tests/`   | 4 arquivos, 28 testes             |
 | E2E (Playwright)     | `apps/web/e2e/`     | 3 specs, 18 testes                |
 | Determinismo do mock | `npm run test:mock` | compara `data/mock` com o gerador |
 

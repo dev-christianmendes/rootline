@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import get_settings
+from app.config import API_ROOT, get_settings
 from app.db import Base, SessionLocal, engine
 from app.auth import auth_router
 from app.routers import deployments, health, incidents, investigations, services, system
@@ -27,13 +27,13 @@ API_PREFIX = "/api/v1"
 async def lifespan(_: FastAPI):
     settings = get_settings()
 
-    # Run alembic migrations only in production (Docker), not in tests (SQLite)
-    # Tests use SQLite and create tables via Base.metadata.create_all in conftest.py
-    if not settings.database_url.startswith("sqlite"):
+    # Run alembic migrations against real databases. SQLite runs and the test
+    # suite (ROOTLINE_RUN_MIGRATIONS=false) create tables via create_all instead.
+    if settings.run_migrations and not settings.database_url.startswith("sqlite"):
         try:
             result = subprocess.run(
                 ["alembic", "upgrade", "head"],
-                cwd="/srv/api",
+                cwd=API_ROOT,
                 capture_output=True,
                 text=True,
                 check=True,
