@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 
-import type { Investigation } from "@rootline/types";
+import type { Incident, Investigation } from "@rootline/types";
 import {
   Badge,
   Button,
@@ -44,6 +44,7 @@ import {
 } from "@/components/common/states";
 import { AnalysisResults } from "@/components/incidents/incident-analysis";
 import { EvidenceGraph } from "@/components/evidence-graph/evidence-graph";
+import { getItems } from "@/lib/pagination-helpers";
 
 export function InvestigationWorkspace({
   investigationId,
@@ -67,7 +68,7 @@ export function InvestigationWorkspace({
   }
 
   const investigation = investigationQ.data;
-  const incident = (incidents.data ?? []).find(
+  const incident = getItems(incidents.data).find(
     (i) => i.id === investigation.incidentId,
   );
 
@@ -159,7 +160,7 @@ function InvestigationGraphs({
   serviceId,
 }: {
   investigation: Investigation;
-  incident: NonNullable<ReturnType<typeof useIncidents>["data"]>[number];
+  incident: Incident;
   serviceId: string;
 }) {
   const topHypothesis = [...investigation.hypotheses].sort(
@@ -198,10 +199,10 @@ function EvidenceRail({
   const traces = useIncidentTraces(incidentId);
   const deployments = useDeployments();
   const incidents = useIncidents();
-  const incident = (incidents.data ?? []).find((i) => i.id === incidentId);
+  const incident = getItems(incidents.data).find((i) => i.id === incidentId);
   const serviceName = useServiceNames();
 
-  const serviceDeployments = (deployments.data ?? []).filter(
+  const serviceDeployments = getItems(deployments.data).filter(
     (d) => d.serviceId === serviceId,
   );
 

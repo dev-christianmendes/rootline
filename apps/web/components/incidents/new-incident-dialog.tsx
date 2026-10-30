@@ -22,6 +22,7 @@ import {
 
 import { useCreateIncident } from "@/features/incidents/use-incidents";
 import { useServices } from "@/features/services/use-services";
+import { getItems } from "@/lib/pagination-helpers";
 
 const SEVERITIES: Severity[] = ["P1", "P2", "P3", "P4"];
 
@@ -61,8 +62,8 @@ export function NewIncidentDialog({
 
   // Default to the first service once the list arrives.
   React.useEffect(() => {
-    if (!serviceId && services.data?.length) {
-      setServiceId(services.data[0]!.id);
+    if (!serviceId && getItems(services.data).length) {
+      setServiceId(getItems(services.data)[0]!.id);
     }
   }, [services.data, serviceId]);
 
@@ -157,7 +158,7 @@ export function NewIncidentDialog({
                 disabled={services.isLoading}
                 className={cn(fieldClass, "appearance-none")}
               >
-                {(services.data ?? []).map((s) => (
+                {getItems(services.data).map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>

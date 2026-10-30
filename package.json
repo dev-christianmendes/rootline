@@ -16,7 +16,7 @@
     "typecheck": "npm run typecheck --workspace @rootline/web && npm run typecheck --workspace @rootline/types && npm run typecheck --workspace @rootline/ui",
     "generate:mock": "node data/scripts/generate-mock.mjs",
     "test:mock": "node data/scripts/generate-mock.mjs --check",
-    "api:install": "python3 -m venv apps/api/.venv && apps/api/.venv/bin/pip install -r apps/api/requirements.txt",
+    "api:install": "python3 -m venv apps/api/.venv && apps/api/.venv/bin/pip install -r apps/api/requirements-dev.txt",
     "api:dev": "cd apps/api && .venv/bin/python -m uvicorn app.main:app --reload --port 8000",
     "api:test": "cd apps/api && .venv/bin/python -m pytest -q",
     "infra:up": "docker compose -f apps/api/docker-compose.yml up -d --build",

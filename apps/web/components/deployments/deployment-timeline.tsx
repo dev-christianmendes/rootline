@@ -27,6 +27,7 @@ import { useIncidents } from "@/features/incidents/use-incidents";
 import { useServiceNames } from "@/features/services/use-services";
 import { formatTime, SEVERITY_META } from "@/lib/format";
 import { EmptyState, LoadingBlock } from "@/components/common/states";
+import { getItems } from "@/lib/pagination-helpers";
 
 const RELATED_WINDOW_MS = 15 * 60 * 1000;
 
@@ -54,8 +55,8 @@ export function DeploymentTimeline() {
   const serviceName = useServiceNames();
 
   if (deployments.isLoading) return <LoadingBlock />;
-  const deps = deployments.data ?? [];
-  const incs = incidents.data ?? [];
+  const deps = getItems(deployments.data);
+  const incs = getItems(incidents.data);
   if (deps.length === 0) return <EmptyState title="No deployments" />;
 
   const all = [...deps, ...incs];
