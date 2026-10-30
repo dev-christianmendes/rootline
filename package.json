@@ -2,7 +2,7 @@
   "name": "rootline",
   "version": "0.1.0",
   "private": true,
-  "description": "Rootline — From incident to root cause. Intelligent incident investigation & operations platform.",
+  "description": "Rootline — From incident to root cause. Incident investigation prototype running on deterministic mock data.",
   "type": "module",
   "workspaces": [
     "apps/*",
