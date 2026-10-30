@@ -145,8 +145,12 @@ def patch_incident(
 ) -> Incident:
     incident = get_incident_or_404(incident_id, db)
     # by_alias keeps the stored resolution document in the same camelCase shape
-    # the rest of the API (and the frontend) uses.
-    changes = payload.model_dump(exclude_unset=True, exclude_none=True, by_alias=True)
+    # the rest of the API (and the frontend) uses. mode="json" turns enums into
+    # their values: on Python 3.11+ formatting a str-mixin Enum yields
+    # "IncidentStatus.monitoring" instead of "MONITORING".
+    changes = payload.model_dump(
+        mode="json", exclude_unset=True, exclude_none=True, by_alias=True
+    )
 
     if "status" in changes and changes["status"] != incident.status:
         new_status = changes["status"]
