@@ -27,6 +27,7 @@ import { chartColor } from "@/lib/chart-colors";
 import { ErrorState } from "@/components/common/states";
 import { useIncidents } from "@/features/incidents/use-incidents";
 import { useServices } from "@/features/services/use-services";
+import { getItems } from "@/lib/pagination-helpers";
 
 type ServiceNodeData = Record<string, unknown> &
   Service & { activeIncident: boolean };
@@ -160,14 +161,14 @@ export function ServiceMap() {
 
   const activeIds = React.useMemo(() => {
     const set = new Set<string>();
-    for (const incident of incidents.data ?? []) {
+    for (const incident of getItems(incidents.data)) {
       if (incident.status !== "RESOLVED") set.add(incident.serviceId);
     }
     return set;
   }, [incidents.data]);
 
   const { nodes, edges } = React.useMemo(
-    () => buildServiceGraph(services.data ?? [], activeIds),
+    () => buildServiceGraph(getItems(services.data), activeIds),
     [services.data, activeIds],
   );
 

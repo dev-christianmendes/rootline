@@ -30,6 +30,8 @@ os.environ["ROOTLINE_DATABASE_URL"] = os.environ.get(
     "ROOTLINE_TEST_DATABASE_URL", f"sqlite:///{Path(_TMP_DIR) / 'rootline-test.db'}"
 )
 os.environ["ROOTLINE_AUTO_SEED"] = "false"
+os.environ["ROOTLINE_RUN_MIGRATIONS"] = "false"
+os.environ["ROOTLINE_RATE_LIMIT_ENABLED"] = "false"
 os.environ["ROOTLINE_ANALYSIS_DELAY_MS"] = "0"
 os.environ["ROOTLINE_SEED_DATA_DIR"] = str(SEED_DIR)
 os.environ["ROOTLINE_SECRET_KEY"] = "test-secret-key-for-testing-only"
