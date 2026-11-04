@@ -1,5 +1,5 @@
 -r requirements.txt
-pytest==9.1.1
+pytest==9.2.0
 # starlette>=1.x TestClient is built on httpx2
 httpx2==2.14.0
 pip-audit==2.7.0
