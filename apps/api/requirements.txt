@@ -9,7 +9,7 @@ passlib[bcrypt]==1.7.4
 # passlib 1.7.4 breaks with bcrypt>=4.1 (its wrap-bug probe raises ValueError)
 bcrypt==4.0.1
 python-multipart==0.0.6
-email-validator==2.1.0.post1
+email-validator==2.3.0
 alembic==1.13.1
 slowapi==0.1.9
 websockets==13.0
