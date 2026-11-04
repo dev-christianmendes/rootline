@@ -12,9 +12,6 @@ concurrency:
 
 permissions:
   contents: read
-  security-events: write
-  packages: write
-  id-token: write
 
 jobs:
   quality:
@@ -23,8 +20,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0 # Required for semantic-release
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -77,12 +72,14 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: apps/api/requirements.txt
+          cache-dependency-path: |
+            apps/api/requirements.txt
+            apps/api/requirements-dev.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r apps/api/requirements.txt pytest
+          pip install -r apps/api/requirements-dev.txt
 
       - name: Tests on SQLite
         run: python -m pytest apps/api -q
@@ -129,87 +126,36 @@ jobs:
     name: Security scanning
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Run CodeQL Analysis
-        uses: github/codeql-action/init@v3
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
         with:
-          languages: typescript, python
+          languages: javascript-typescript, python
           queries: security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
+
+      # No container images are published yet, so Trivy scans the repository
+      # (lockfiles, Dockerfile, IaC) instead of registry images.
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          category: "/language:typescript"
-          upload: true
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig
+          format: sarif
+          output: trivy-fs.sarif
+          severity: HIGH,CRITICAL
 
-      - name: Trivy container scan (API)
-        uses: aquasecurity/trivy-action@master
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles('trivy-fs.sarif') != ''
         with:
-          image-ref: "ghcr.io/${{ github.repository }}/rootline-api:latest"
-          format: "sarif"
-          output: "trivy-api.sarif"
-          severity: "HIGH,CRITICAL"
-        continue-on-error: true
-
-      - name: Trivy container scan (Web)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "ghcr.io/${{ github.repository }}/rootline-web:latest"
-          format: "sarif"
-          output: "trivy-web.sarif"
-          severity: "HIGH,CRITICAL"
-        continue-on-error: true
-
-      - name: Upload Trivy results (API)
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-api.sarif
-          category: trivy-api
-
-      - name: Upload Trivy results (Web)
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-web.sarif
-          category: trivy-web
-
-  release:
-    name: Release
-    needs: [quality, api, mock-data, security]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-      id-token: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs

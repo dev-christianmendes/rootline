@@ -13,9 +13,9 @@ updates:
       timezone: "America/Sao_Paulo"
     open-pull-requests-limit: 10
     reviewers:
-      - "chris"
+      - "dev-christianmendes"
     assignees:
-      - "chris"
+      - "dev-christianmendes"
     labels:
       - "dependencies"
       - "npm"
@@ -71,9 +71,9 @@ updates:
       timezone: "America/Sao_Paulo"
     open-pull-requests-limit: 10
     reviewers:
-      - "chris"
+      - "dev-christianmendes"
     assignees:
-      - "chris"
+      - "dev-christianmendes"
     labels:
       - "dependencies"
       - "python"
@@ -112,9 +112,9 @@ updates:
       timezone: "America/Sao_Paulo"
     open-pull-requests-limit: 5
     reviewers:
-      - "chris"
+      - "dev-christianmendes"
     assignees:
-      - "chris"
+      - "dev-christianmendes"
     labels:
       - "dependencies"
       - "github-actions"

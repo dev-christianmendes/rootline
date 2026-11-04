@@ -48,7 +48,7 @@ export function IncidentAnalysis({ incidentId }: { incidentId: string }) {
       {noInvestigation ? (
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
           <div className="space-y-1">
-            <p className="text-sm font-medium">No AI investigation yet</p>
+            <p className="text-sm font-medium">No analysis yet</p>
             <p className="text-muted-foreground text-xs">
               Correlate metrics, logs, deployments and traces to generate
               hypotheses for this incident.
@@ -109,7 +109,7 @@ function AnalysisCard({ children }: { children: React.ReactNode }) {
     <Card className="gap-0">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
-          <Sparkles className="text-info size-4" /> AI Investigation
+          <Sparkles className="text-info size-4" /> Automated analysis
         </CardTitle>
       </CardHeader>
       <CardContent>{children}</CardContent>
@@ -132,7 +132,7 @@ export function AnalysisResults({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="info" className="gap-1.5">
-          <Sparkles className="size-3" /> AI Investigation
+          <Sparkles className="size-3" /> Automated analysis
         </Badge>
         {live ? (
           <Badge variant="warning" className="gap-1.5">

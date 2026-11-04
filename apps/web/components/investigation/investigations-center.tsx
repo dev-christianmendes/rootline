@@ -17,8 +17,13 @@ import { useInvestigations } from "@/features/analysis/use-analysis";
 import { useIncidents } from "@/features/incidents/use-incidents";
 import { formatTime, formatDuration } from "@/lib/format";
 import { SeverityBadge, StatusBadge } from "@/components/common/badges";
-import { EmptyState, ErrorState, LoadingBlock } from "@/components/common/states";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingBlock,
+} from "@/components/common/states";
 import { ConfidenceBar } from "@/components/investigation/hypothesis-card";
+import { getItems } from "@/lib/pagination-helpers";
 
 export function InvestigationsCenter() {
   const investigations = useInvestigations();
@@ -39,10 +44,13 @@ export function InvestigationsCenter() {
   return (
     <div className="space-y-4">
       {list.length === 0 ? (
-        <EmptyState title="No investigations yet" detail="Run an analysis from an incident to start investigating." />
+        <EmptyState
+          title="No investigations yet"
+          detail="Run an analysis from an incident to start investigating."
+        />
       ) : (
         list.map((inv) => {
-          const incident = (incidents.data ?? []).find(
+          const incident = getItems(incidents.data).find(
             (i) => i.id === inv.incidentId,
           );
           return (
@@ -78,11 +86,19 @@ export function InvestigationsCenter() {
                 </p>
                 <div className="flex flex-wrap gap-4">
                   {inv.hypotheses.map((h) => (
-                    <div key={h.id} className="flex items-center gap-2 rounded-md border border-border/60 px-3 py-2">
+                    <div
+                      key={h.id}
+                      className="flex items-center gap-2 rounded-md border border-border/60 px-3 py-2"
+                    >
                       <Sparkles className="text-info size-3.5" />
-                      <span className="max-w-56 truncate text-sm">{h.title}</span>
+                      <span className="max-w-56 truncate text-sm">
+                        {h.title}
+                      </span>
                       <ConfidenceBar confidence={h.confidence} />
-                      <Badge variant={h.confidence >= 0.6 ? "info" : "muted"} className="font-mono text-[10px]">
+                      <Badge
+                        variant={h.confidence >= 0.6 ? "info" : "muted"}
+                        className="font-mono text-[10px]"
+                      >
                         {h.evidence.length + h.counterEvidence.length} ev
                       </Badge>
                     </div>

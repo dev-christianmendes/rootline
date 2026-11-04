@@ -48,8 +48,20 @@ const NOTIFICATIONS = [
     detail: "Payment API HTTP 500 spike",
     time: "14:08",
   },
-  { id: "n2", kind: "correlation", title: "Correlation detected", detail: "v2.8.1 deployment ↔ error rate", time: "14:10" },
-  { id: "n3", kind: "hypothesis", title: "AI hypothesis ready", detail: "payment-api deployment · 82%", time: "14:11" },
+  {
+    id: "n2",
+    kind: "correlation",
+    title: "Correlation detected",
+    detail: "v2.8.1 deployment ↔ error rate",
+    time: "14:10",
+  },
+  {
+    id: "n3",
+    kind: "hypothesis",
+    title: "Hypothesis ready",
+    detail: "payment-api deployment · 82%",
+    time: "14:11",
+  },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -113,7 +125,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="flex items-center gap-0.5 overflow-x-auto border-t border-border/50 px-4 py-1.5 md:hidden">
           {NAV_ITEMS.map((item) => {
             const active =
-              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
@@ -141,7 +155,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ROOTLINE · from incident to root cause
           </p>
           <p className="text-muted-foreground font-mono text-xs">
-            AI doesn&apos;t guess. It investigates.
+            Prototype · deterministic mock data
           </p>
         </div>
       </footer>
@@ -167,12 +181,17 @@ function NotificationsMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {NOTIFICATIONS.map((n) => (
-          <DropdownMenuItem key={n.id} className="flex items-start gap-2.5 py-2">
+          <DropdownMenuItem
+            key={n.id}
+            className="flex items-start gap-2.5 py-2"
+          >
             <div className="mt-0.5 flex flex-col">
               <span className="text-sm font-medium">{n.title}</span>
               <span className="text-muted-foreground text-xs">{n.detail}</span>
             </div>
-            <span className="text-muted-foreground ml-auto font-mono text-xs">{n.time}</span>
+            <span className="text-muted-foreground ml-auto font-mono text-xs">
+              {n.time}
+            </span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

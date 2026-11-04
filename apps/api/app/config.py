@@ -8,6 +8,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # apps/api/app/config.py -> apps/api -> apps -> <repo root>
 REPO_ROOT = Path(__file__).resolve().parents[3]
+# Directory holding alembic.ini (apps/api locally, /srv/api in the image).
+API_ROOT = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):
@@ -27,6 +29,13 @@ class Settings(BaseSettings):
 
     # Seed the database from seed_data_dir when it is empty.
     auto_seed: bool = True
+
+    # Apply alembic migrations on startup (non-SQLite databases only). The
+    # test suite owns its schema through create_all and turns this off.
+    run_migrations: bool = True
+
+    # Per-route rate limits on write endpoints (see app/rate_limiter.py).
+    rate_limit_enabled: bool = True
 
     # The analysis pipeline still returns pre-computed hypotheses, so this
     # delay reproduces the "investigating" feel of the previous mock API.
